@@ -1,0 +1,60 @@
+name: NSLab Scholar Monitor
+
+on:
+  schedule:
+    - cron: '0 0 * * *'   # 매일 09:00 KST (= UTC 00:00)
+  workflow_dispatch:
+    inputs:
+      test_mode:
+        description: '테스트 모드 (WP 실제 게시 안 함)'
+        required: false
+        default: 'false'
+
+jobs:
+  monitor:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: pip
+
+      - name: Install
+        run: pip install scholarly anthropic requests
+
+      - name: Restore cache
+        uses: actions/cache@v4
+        with:
+          path: seen_papers.json
+          key: nslab-papers-${{ github.run_id }}
+          restore-keys: nslab-papers-
+
+      - name: Run monitor
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          WP_SITE_URL:       ${{ secrets.WP_SITE_URL }}
+          WP_USERNAME:       ${{ secrets.WP_USERNAME }}
+          WP_APP_PASSWORD:   ${{ secrets.WP_APP_PASSWORD }}
+          TEST_MODE:         ${{ github.event.inputs.test_mode || 'false' }}
+        run: python scholar_monitor.py
+
+      - name: Commit cache
+        run: |
+          git config user.email "bot@nslab.tech"
+          git config user.name "NSLab Bot"
+          git add seen_papers.json 2>/dev/null || true
+          git diff --staged --quiet || git commit -m "chore: scholar cache [skip ci]"
+          git push || true
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: results-${{ github.run_number }}
+          path: results/
+          retention-days: 30
+          if-no-files-found: ignore
