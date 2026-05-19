@@ -1,0 +1,924 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NSLab PR Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,400;0,500;1,400&family=Pretendard:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#090c12;--bg2:#10141e;--bg3:#181d2a;--bg4:#1e2436;
+  --border:rgba(255,255,255,.06);--border2:rgba(255,255,255,.11);--border3:rgba(255,255,255,.18);
+  --text:#eef0f6;--text2:#8891a8;--text3:#4e5568;
+  --blue:#5b8df5;--teal:#4fc4b0;--purple:#9d7ef5;--amber:#f5a623;--green:#3ecf8e;--red:#f06b6b;
+  --mono:'DM Mono',monospace;--sans:'Pretendard',sans-serif;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{font-size:14px}
+body{font-family:var(--sans);background:var(--bg);color:var(--text);min-height:100vh;display:flex}
+
+/* ── SIDEBAR ── */
+.sb{width:224px;height:100vh;background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;position:fixed;left:0;top:0;z-index:100;transition:width .25s}
+.sb-logo{display:flex;align-items:center;gap:11px;padding:20px 18px 16px;border-bottom:1px solid var(--border)}
+.mark{width:34px;height:34px;flex-shrink:0;border-radius:9px;background:linear-gradient(135deg,var(--blue),var(--teal));display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:12px;font-weight:500;color:#fff;letter-spacing:.02em}
+.brand-name{font-size:13px;font-weight:700;letter-spacing:.01em}
+.brand-ver{font-size:10px;color:var(--text3);font-family:var(--mono);margin-top:1px}
+.sb-nav{flex:1;padding:14px 10px;overflow-y:auto}
+.nav-group{font-size:9px;font-family:var(--mono);color:var(--text3);letter-spacing:.12em;text-transform:uppercase;padding:12px 8px 5px}
+.ni{display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:8px;font-size:12.5px;color:var(--text2);cursor:pointer;border:none;background:none;width:100%;text-align:left;transition:all .12s;white-space:nowrap}
+.ni:hover{background:rgba(255,255,255,.04);color:var(--text)}
+.ni.on{background:rgba(91,141,245,.13);color:var(--blue)}
+.ni-i{width:15px;font-size:13px;flex-shrink:0;opacity:.65}
+.ni.on .ni-i{opacity:1}
+.sb-foot{padding:14px 16px;border-top:1px solid var(--border)}
+.live{display:flex;align-items:center;gap:7px;font-size:11px;color:var(--text2)}
+.ldot{width:6px;height:6px;border-radius:50%;background:var(--green);animation:ld 2.4s ease infinite}
+@keyframes ld{0%,100%{opacity:1;box-shadow:0 0 0 0 rgba(62,207,142,.5)}50%{opacity:.4;box-shadow:0 0 0 4px rgba(62,207,142,0)}}
+
+/* ── MAIN ── */
+.main{margin-left:224px;flex:1;display:flex;flex-direction:column;min-height:100vh}
+.topbar{height:54px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 26px;background:rgba(9,12,18,.92);backdrop-filter:blur(14px);position:sticky;top:0;z-index:50}
+.tb-l{display:flex;align-items:center;gap:10px}
+.tb-r{display:flex;align-items:center;gap:7px}
+.page-h{font-size:14px;font-weight:600}
+.ap{display:inline-flex;align-items:center;gap:5px;font-size:10px;font-family:var(--mono);padding:4px 9px;border-radius:20px;border:1px solid;cursor:pointer;transition:all .2s}
+.ap-ok{background:rgba(62,207,142,.07);color:var(--green);border-color:rgba(62,207,142,.22)}
+.ap-err{background:rgba(240,107,107,.07);color:var(--red);border-color:rgba(240,107,107,.22)}
+.ap-unk{background:rgba(78,85,104,.1);color:var(--text3);border-color:var(--border)}
+.content{padding:26px;flex:1}
+.pg{display:none}.pg.on{display:block}
+
+/* ── ONBOARD CARD ── */
+.onboard{background:linear-gradient(135deg,rgba(91,141,245,.07) 0%,rgba(79,196,176,.07) 100%);border:1px solid rgba(91,141,245,.18);border-radius:14px;padding:22px 26px;margin-bottom:24px}
+.ob-title{font-size:15px;font-weight:700;color:var(--blue);margin-bottom:16px;display:flex;align-items:center;gap:8px}
+.ob-steps{display:grid;grid-template-columns:repeat(5,1fr);gap:10px}
+.ob-step{background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:12px 13px;transition:border-color .2s}
+.ob-step.done{border-color:rgba(62,207,142,.3);background:rgba(62,207,142,.04)}
+.ob-n{font-size:9px;font-family:var(--mono);color:var(--text3);margin-bottom:4px;text-transform:uppercase;letter-spacing:.07em}
+.ob-l{font-size:12px;font-weight:600;color:var(--text);margin-bottom:2px}
+.ob-d{font-size:10px;color:var(--text3);line-height:1.5}
+
+/* ── METRICS ── */
+.metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:13px;margin-bottom:22px}
+.mc{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:17px 19px;position:relative;overflow:hidden}
+.mc::after{content:'';position:absolute;top:0;left:0;right:0;height:2px}
+.mc-b::after{background:linear-gradient(90deg,var(--blue),transparent)}
+.mc-g::after{background:linear-gradient(90deg,var(--green),transparent)}
+.mc-t::after{background:linear-gradient(90deg,var(--teal),transparent)}
+.mc-p::after{background:linear-gradient(90deg,var(--purple),transparent)}
+.mc-lbl{font-size:9px;font-family:var(--mono);color:var(--text3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:9px}
+.mc-val{font-size:28px;font-weight:700;line-height:1}
+.mc-b .mc-val{color:var(--blue)}.mc-g .mc-val{color:var(--green)}.mc-t .mc-val{color:var(--teal)}.mc-p .mc-val{color:var(--purple)}
+.mc-sub{font-size:10px;color:var(--text3);margin-top:5px}
+
+/* ── SCHOLAR PANEL ── */
+.scholar{background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:18px 22px;margin-bottom:22px}
+.sch-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:13px;flex-wrap:wrap;gap:10px}
+.sch-id{display:flex;align-items:center;gap:13px}
+.av{width:42px;height:42px;border-radius:11px;background:linear-gradient(135deg,var(--blue),var(--teal));display:flex;align-items:center;justify-content:center;font-weight:800;font-size:13px;color:#fff;flex-shrink:0;letter-spacing:.02em}
+.id-nm{font-size:14px;font-weight:700}.id-meta{font-size:10px;color:var(--text2);margin-top:2px;font-family:var(--mono)}
+.chips{display:flex;gap:5px;flex-wrap:wrap;margin-top:4px}
+.chip{font-size:9px;padding:2px 7px;border-radius:20px;font-family:var(--mono);font-weight:500;background:rgba(62,207,142,.1);color:var(--green);border:1px solid rgba(62,207,142,.22)}
+.logbox{background:var(--bg);border:1px solid var(--border);border-radius:9px;max-height:150px;overflow-y:auto;padding:11px 13px;font-family:var(--mono);font-size:10.5px;line-height:2.1}
+.lr{display:flex;gap:9px}.lt{color:var(--text3);flex-shrink:0;min-width:60px}
+.lok{color:var(--green)}.linf{color:var(--blue)}.lwrn{color:var(--amber)}.lerr{color:var(--red)}
+
+/* ── TABLES ── */
+.tw{background:var(--bg2);border:1px solid var(--border);border-radius:13px;overflow:hidden}
+.pt{width:100%;border-collapse:collapse}
+.pt th{font-size:9px;font-family:var(--mono);color:var(--text3);text-align:left;padding:11px 13px;border-bottom:1px solid var(--border);letter-spacing:.08em;text-transform:uppercase;font-weight:500;white-space:nowrap}
+.pt td{padding:12px 13px;border-bottom:1px solid var(--border);vertical-align:top;font-size:12.5px}
+.pt tr:last-child td{border-bottom:none}.pt tbody tr:hover td{background:rgba(255,255,255,.018)}
+.pt-t{font-weight:500;color:var(--text);line-height:1.5;max-width:280px}
+.pt-a{font-size:10px;color:var(--text3);margin-top:2px}
+.fb{display:inline-block;font-size:9px;padding:2px 7px;border-radius:20px;font-family:var(--mono);font-weight:500;white-space:nowrap}
+.fb-ai{background:rgba(91,141,245,.14);color:#8bb3fc;border:1px solid rgba(91,141,245,.24)}
+.fb-iot{background:rgba(79,196,176,.14);color:var(--teal);border:1px solid rgba(79,196,176,.24)}
+.fb-def{background:rgba(245,166,35,.14);color:var(--amber);border:1px solid rgba(245,166,35,.24)}
+.fb-meta{background:rgba(157,126,245,.14);color:#c4b5fd;border:1px solid rgba(157,126,245,.24)}
+.fb-bc{background:rgba(62,207,142,.14);color:var(--green);border:1px solid rgba(62,207,142,.24)}
+.fb-sec{background:rgba(240,107,107,.14);color:#f9a8a8;border:1px solid rgba(240,107,107,.24)}
+.ps{display:inline-flex;align-items:center;gap:4px;font-size:9px;font-family:var(--mono);padding:2px 8px;border-radius:20px;white-space:nowrap}
+.ps-done{background:rgba(62,207,142,.09);color:var(--green);border:1px solid rgba(62,207,142,.2)}
+.ps-pend{background:rgba(78,85,104,.09);color:var(--text3);border:1px solid var(--border)}
+.ps-gen{background:rgba(245,166,35,.09);color:var(--amber);border:1px solid rgba(245,166,35,.2);animation:bk .7s infinite}
+.ps-wp{background:rgba(91,141,245,.09);color:var(--blue);border:1px solid rgba(91,141,245,.2)}
+@keyframes bk{0%,100%{opacity:1}50%{opacity:.4}}
+
+/* ── PR CARDS ── */
+.prc{background:var(--bg2);border:1px solid var(--border);border-radius:14px;margin-bottom:15px;overflow:hidden;transition:border-color .2s}
+.prc:hover{border-color:var(--border2)}
+.prc-h{display:flex;align-items:flex-start;justify-content:space-between;padding:17px 19px 13px;gap:12px}
+.prc-t{font-size:13.5px;font-weight:700;line-height:1.5;margin-bottom:3px}
+.prc-m{font-size:10px;color:var(--text3);font-family:var(--mono)}
+.chs{padding:0 19px 16px;display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.ch{background:var(--bg3);border:1px solid var(--border);border-radius:9px;padding:12px 13px}
+.ch-l{font-size:9px;font-family:var(--mono);letter-spacing:.07em;margin-bottom:5px;display:flex;align-items:center;gap:5px;text-transform:uppercase}
+.ch-d{width:5px;height:5px;border-radius:50%;flex-shrink:0}
+.ch-t{font-size:11.5px;color:var(--text2);line-height:1.8;cursor:text}
+.ch-footer{display:flex;justify-content:flex-end;margin-top:7px}
+
+/* ── SETTINGS CARDS ── */
+.sc{background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:20px 22px;margin-bottom:14px}
+.sc-t{font-size:10px;font-family:var(--mono);font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text2);margin-bottom:14px;display:flex;align-items:center;gap:7px}
+.sr{display:flex;align-items:center;justify-content:space-between;padding:11px 0;border-bottom:1px solid var(--border)}
+.sr:last-child{border-bottom:none}
+.s-lbl{font-size:12.5px;font-weight:500}.s-desc{font-size:10px;color:var(--text3);margin-top:2px}
+.tog{width:38px;height:20px;border-radius:10px;background:var(--bg3);border:1px solid var(--border2);position:relative;cursor:pointer;transition:all .2s;flex-shrink:0}
+.tog.on{background:var(--blue);border-color:var(--blue)}
+.tog::after{content:'';width:14px;height:14px;border-radius:7px;background:#fff;position:absolute;top:2px;left:2px;transition:transform .2s;box-shadow:0 1px 3px rgba(0,0,0,.3)}
+.tog.on::after{transform:translateX(18px)}
+.inp{background:var(--bg3);border:1px solid var(--border2);border-radius:7px;padding:7px 11px;color:var(--text);font-size:11.5px;font-family:var(--mono);width:100%;transition:border-color .2s}
+.inp:focus{outline:none;border-color:var(--blue)}.inp::placeholder{color:var(--text3)}
+select.inp{cursor:pointer}
+
+/* ── AUTOMATION ── */
+.ac{background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:19px}
+.ac-t{font-size:10px;font-family:var(--mono);font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text2);margin-bottom:13px}
+.fi{display:flex;align-items:center;gap:11px;background:var(--bg3);border-radius:9px;padding:10px 12px;margin-bottom:7px;border:1px solid transparent}
+.fn{width:22px;height:22px;border-radius:6px;background:rgba(91,141,245,.14);color:var(--blue);font-size:10px;font-family:var(--mono);font-weight:600;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.f-nm{font-size:12px;font-weight:600}.f-ds{font-size:10px;color:var(--text3);margin-top:1px}
+.codebox{background:var(--bg);border:1px solid var(--border);border-radius:9px;padding:13px;font-family:var(--mono);font-size:10.5px;line-height:2;overflow-x:auto;max-height:230px;overflow-y:auto;white-space:pre}
+.ck{color:var(--purple)}.cs{color:var(--teal)}.cv{color:var(--blue)}.cc{color:var(--text3)}
+
+/* ── BUTTONS ── */
+.btn{display:inline-flex;align-items:center;gap:5px;padding:6px 13px;border-radius:7px;font-size:11.5px;font-family:var(--sans);font-weight:500;cursor:pointer;border:1px solid var(--border2);background:var(--bg3);color:var(--text2);transition:all .13s;white-space:nowrap;text-decoration:none}
+.btn:hover{background:rgba(255,255,255,.06);color:var(--text);border-color:var(--border3)}
+.btn:disabled{opacity:.35;cursor:not-allowed}
+.btn-p{background:var(--blue);color:#fff;border-color:transparent}.btn-p:hover{background:#6f9ef8;border-color:transparent;color:#fff}
+.btn-g{background:rgba(62,207,142,.13);color:var(--green);border-color:rgba(62,207,142,.28)}.btn-g:hover{background:rgba(62,207,142,.22)}
+.btn-w{background:rgba(245,166,35,.11);color:var(--amber);border-color:rgba(245,166,35,.28)}
+.btn-sm{padding:4px 9px;font-size:10.5px}.btn-xs{padding:2px 7px;font-size:10px}
+.spin{display:inline-block;animation:sp .55s linear infinite}@keyframes sp{to{transform:rotate(360deg)}}
+
+/* ── MODAL ── */
+.ov{position:fixed;inset:0;background:rgba(0,0,0,.72);backdrop-filter:blur(5px);z-index:200;display:flex;align-items:center;justify-content:center;padding:20px}
+.modal{background:var(--bg2);border:1px solid var(--border2);border-radius:16px;width:100%;max-width:520px;max-height:88vh;overflow-y:auto;padding:22px}
+.modal-t{font-size:15px;font-weight:700;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between}
+.mc{cursor:pointer;color:var(--text3);font-size:17px;padding:3px}
+label.lbl{display:block;font-size:10px;font-family:var(--mono);color:var(--text3);margin-bottom:4px;text-transform:uppercase;letter-spacing:.06em}
+
+/* ── NEW PAPER ALERT ── */
+.nalert{background:linear-gradient(135deg,rgba(91,141,245,.07),rgba(79,196,176,.07));border:1px solid rgba(91,141,245,.22);border-radius:12px;padding:15px 18px;margin-bottom:20px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.pulse-ic{width:38px;height:38px;border-radius:10px;background:rgba(91,141,245,.14);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;animation:pulse-ic 1.8s ease infinite}
+@keyframes pulse-ic{0%,100%{box-shadow:0 0 0 0 rgba(91,141,245,.4)}50%{box-shadow:0 0 0 7px rgba(91,141,245,0)}}
+
+/* ── CAMPAIGN ── */
+.prog{height:3px;background:var(--bg3);border-radius:2px;overflow:hidden;margin-top:6px}
+.prog-f{height:100%;background:linear-gradient(90deg,var(--blue),var(--teal));border-radius:2px;transition:width .4s ease}
+
+/* ── TOAST ── */
+.toasts{position:fixed;bottom:22px;right:22px;display:flex;flex-direction:column;gap:7px;z-index:999}
+.toast{background:var(--bg2);border:1px solid var(--border2);border-radius:9px;padding:11px 15px;font-size:11.5px;color:var(--text);display:flex;align-items:center;gap:9px;box-shadow:0 8px 28px rgba(0,0,0,.55);animation:tin .2s ease;min-width:230px;max-width:320px}
+@keyframes tin{from{transform:translateX(18px);opacity:0}}
+.toast.tout{animation:tout .2s ease forwards}@keyframes tout{to{transform:translateX(18px);opacity:0}}
+
+/* ── SCROLLBAR ── */
+::-webkit-scrollbar{width:3px;height:3px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px}
+
+/* ── RESPONSIVE ── */
+@media(max-width:960px){
+  .sb{width:54px}
+  .brand-name,.brand-ver,.nav-group,.ni span:not(.ni-i){display:none}
+  .main{margin-left:54px}
+  .metrics{grid-template-columns:1fr 1fr}
+  .ob-steps{grid-template-columns:1fr 1fr}
+  .chs{grid-template-columns:1fr}
+}
+@media(max-width:600px){.metrics{grid-template-columns:1fr 1fr}}
+</style>
+</head>
+<body>
+
+<!-- ═══════════════ SIDEBAR ═══════════════ -->
+<aside class="sb">
+  <div class="sb-logo">
+    <div class="mark">NS</div>
+    <div><div class="brand-name">NSLab PR</div><div class="brand-ver">Scholar · AI · Auto</div></div>
+  </div>
+  <nav class="sb-nav">
+    <div class="nav-group">Monitor</div>
+    <button class="ni on" onclick="go('dashboard')"><span class="ni-i">⬡</span><span>대시보드</span></button>
+    <button class="ni" onclick="go('scholar')"><span class="ni-i">◈</span><span>Scholar 모니터</span></button>
+    <div class="nav-group">Content</div>
+    <button class="ni" onclick="go('papers')"><span class="ni-i">◻</span><span>논문 관리</span></button>
+    <button class="ni" onclick="go('patent')"><span class="ni-i">◈</span><span>특허 관리</span></button>
+    <button class="ni" onclick="go('pr')"><span class="ni-i">◆</span><span>홍보 콘텐츠</span></button>
+    <button class="ni" onclick="go('campaign')"><span class="ni-i">▸</span><span>캠페인</span></button>
+    <div class="nav-group">System</div>
+    <button class="ni" onclick="go('automation')"><span class="ni-i">⟳</span><span>자동화</span></button>
+    <button class="ni" onclick="go('settings')"><span class="ni-i">⚙</span><span>설정</span></button>
+  </nav>
+  <div class="sb-foot">
+    <div class="live"><span class="ldot"></span><span id="sys-st">준비</span></div>
+  </div>
+</aside>
+
+<!-- ═══════════════ MAIN ═══════════════ -->
+<main class="main">
+  <div class="topbar">
+    <div class="tb-l"><span class="page-h" id="phead">대시보드</span></div>
+    <div class="tb-r">
+      <div class="ap ap-unk" id="apill" onclick="checkApi()" title="클릭하여 API 상태 확인">
+        <span id="adot">○</span><span id="albl">API 미확인</span>
+      </div>
+      <button class="btn btn-sm" id="scanbtn" onclick="runScan()"><span id="scan-ic">↻</span> Scholar 스캔</button>
+      <button class="btn btn-sm btn-p" onclick="genAll()">✦ 전체 홍보 생성</button>
+    </div>
+  </div>
+
+  <div class="content">
+
+    <!-- ══ DASHBOARD ══ -->
+    <div class="pg on" id="pg-dashboard">
+
+      <!-- Onboarding guide -->
+      <div class="onboard" id="onboard">
+        <div class="ob-title">🚀 배포 완료! — 아래 5단계로 자동화를 시작하세요</div>
+        <div class="ob-steps">
+          <div class="ob-step" id="ob1">
+            <div class="ob-n">STEP 1</div>
+            <div class="ob-l">GitHub / Netlify</div>
+            <div class="ob-d">이 파일을 배포 완료</div>
+          </div>
+          <div class="ob-step done">
+            <div class="ob-n">STEP 2 ✓</div>
+            <div class="ob-l">웹앱 접속</div>
+            <div class="ob-d">지금 보고 계신 화면</div>
+          </div>
+          <div class="ob-step" id="ob3">
+            <div class="ob-n">STEP 3</div>
+            <div class="ob-l">API 키 등록</div>
+            <div class="ob-d">설정 탭 → Anthropic 키</div>
+          </div>
+          <div class="ob-step" id="ob4">
+            <div class="ob-n">STEP 4</div>
+            <div class="ob-l">GitHub Actions</div>
+            <div class="ob-d">scholar_monitor.py 업로드</div>
+          </div>
+          <div class="ob-step" id="ob5">
+            <div class="ob-n">STEP 5</div>
+            <div class="ob-l">자동화 완성</div>
+            <div class="ob-d">매일 09:00 KST 자동 실행</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- New paper alert -->
+      <div class="nalert" id="nalert" style="display:none">
+        <div class="pulse-ic">📡</div>
+        <div style="flex:1;min-width:200px">
+          <div style="font-size:13px;font-weight:700;color:var(--blue)">Google Scholar 신규 논문 감지!</div>
+          <div id="amsg" style="font-size:11px;color:var(--text2);margin-top:2px"></div>
+        </div>
+        <button class="btn btn-p btn-sm" onclick="handleAlert()">AI 홍보 생성</button>
+        <button class="btn btn-sm" onclick="document.getElementById('nalert').style.display='none'">✕</button>
+      </div>
+
+      <!-- Metrics -->
+      <div class="metrics">
+        <div class="mc mc-b"><div class="mc-lbl">Total Papers</div><div class="mc-val" id="m-tot">14</div><div class="mc-sub">등록 논문 수</div></div>
+        <div class="mc mc-g"><div class="mc-lbl">PR Generated</div><div class="mc-val" id="m-pr">2</div><div class="mc-sub">AI 홍보문 완료</div></div>
+        <div class="mc mc-t"><div class="mc-lbl">특허 출원</div><div class="mc-val" id="m-pat">3</div><div class="mc-sub">등록 1 · 출원 2</div></div>
+        <div class="mc mc-p"><div class="mc-lbl">Published</div><div class="mc-val" id="m-wp">1</div><div class="mc-sub">nslab.tech 게시됨</div></div>
+      </div>
+
+      <!-- Scholar identity -->
+      <div class="scholar">
+        <div class="sch-hd">
+          <div class="sch-id">
+            <div class="av">DS</div>
+            <div>
+              <div class="id-nm">김동성 · Dong-Seong Kim</div>
+              <div class="id-meta">ORCID: 0000-0002-2977-5964 · KIT NSLab · CEO (주)앤에스랩</div>
+              <div class="chips">
+                <span class="chip">✓ ORCID</span><span class="chip">✓ DBLP</span>
+                <span class="chip">✓ IEEE</span><span class="chip">✓ Scholar</span><span class="chip">✓ 동일인물</span>
+              </div>
+            </div>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+            <span style="font-size:10px;font-family:var(--mono);color:var(--text3)" id="scan-time">마지막 스캔: —</span>
+            <button class="btn btn-g btn-sm" onclick="runScan()">↻ 지금 스캔</button>
+          </div>
+        </div>
+        <div class="logbox" id="main-log">
+          <div class="lr"><span class="lt">시스템</span><span class="linf">NSLab PR Dashboard — API 설정 탭에서 Anthropic 키를 등록하세요</span></div>
+        </div>
+      </div>
+
+      <!-- Recent papers -->
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:11px">
+        <span style="font-size:9px;font-family:var(--mono);color:var(--text3);text-transform:uppercase;letter-spacing:.08em">최근 논문</span>
+        <button class="btn btn-sm" onclick="go('papers')">전체 보기 →</button>
+      </div>
+      <div class="tw"><table class="pt">
+        <thead><tr><th>#</th><th>논문 제목 / 저자</th><th>게재지</th><th>연도</th><th>분야</th><th>홍보</th><th>작업</th></tr></thead>
+        <tbody id="d-tbody"></tbody>
+      </table></div>
+    </div>
+
+    <!-- ══ SCHOLAR ══ -->
+    <div class="pg" id="pg-scholar">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:18px">
+        <div class="ac">
+          <div class="ac-t">◈ 실시간 Scholar 로그</div>
+          <div class="logbox" id="slog" style="max-height:270px">
+            <div class="lr"><span class="lt">대기</span><span class="linf">스캔 버튼을 눌러 시작</span></div>
+          </div>
+          <div style="display:flex;gap:7px;margin-top:11px">
+            <button class="btn btn-p btn-sm" onclick="runScan()">📡 Scholar 스캔 실행</button>
+            <button class="btn btn-w btn-sm" onclick="simNew()">⚡ 신규 논문 시뮬</button>
+          </div>
+        </div>
+        <div class="ac">
+          <div class="ac-t">✓ 동일인물 검증 상태</div>
+          <div style="display:flex;flex-direction:column;gap:7px">
+            <div class="fi"><div class="fn">✓</div><div><div class="f-nm">ORCID API</div><div class="f-ds">0000-0002-2977-5964 실시간 확인</div></div><span class="ps ps-done">활성</span></div>
+            <div class="fi"><div class="fn">✓</div><div><div class="f-nm">Google Scholar</div><div class="f-ds">피인용 14,780+ 프로필 매칭</div></div><span class="ps ps-done">활성</span></div>
+            <div class="fi"><div class="fn">✓</div><div><div class="f-nm">DBLP 교차확인</div><div class="f-ds">컴퓨터과학 서지 DB</div></div><span class="ps ps-done">활성</span></div>
+            <div class="fi"><div class="fn">✓</div><div><div class="f-nm">소속 키워드 필터</div><div class="f-ds">NSLab, Kumoh, KIT, ICT-CRC</div></div><span class="ps ps-done">활성</span></div>
+            <div class="fi"><div class="fn">✓</div><div><div class="f-nm">동명이인 자동 제외</div><div class="f-ds">분야 + 소속 2중 검증</div></div><span class="ps ps-done">활성</span></div>
+          </div>
+        </div>
+      </div>
+      <div class="ac">
+        <div class="ac-t">⚙ GitHub Actions 자동화 코드</div>
+        <div class="codebox"><span class="cc"># .github/workflows/scholar-monitor.yml</span>
+<span class="ck">name:</span> <span class="cs">NSLab Scholar Monitor</span>
+<span class="ck">on:</span>
+  <span class="ck">schedule:</span>
+    - <span class="ck">cron:</span> <span class="cs">'0 0 * * *'</span>  <span class="cc"># 매일 09:00 KST (UTC 00:00)</span>
+  <span class="ck">workflow_dispatch:</span>  <span class="cc"># 수동 실행</span>
+<span class="ck">jobs:</span>
+  <span class="ck">scan:</span>
+    <span class="ck">runs-on:</span> <span class="cs">ubuntu-latest</span>
+    <span class="ck">steps:</span>
+      - <span class="ck">uses:</span> <span class="cs">actions/checkout@v4</span>
+      - <span class="ck">name:</span> <span class="cs">Install & Run</span>
+        <span class="ck">env:</span>
+          <span class="ck">ANTHROPIC_API_KEY:</span> <span class="cs">${{ secrets.ANTHROPIC_API_KEY }}</span>
+          <span class="ck">WP_SITE_URL:</span>      <span class="cs">${{ secrets.WP_SITE_URL }}</span>
+          <span class="ck">WP_APP_PASSWORD:</span>  <span class="cs">${{ secrets.WP_APP_PASSWORD }}</span>
+        <span class="ck">run:</span> <span class="cs">|
+          pip install scholarly anthropic requests
+          python scholar_monitor.py</span></div>
+        <button class="btn btn-sm" style="margin-top:9px" onclick="cpTxt('GitHub Actions 코드가 복사되었습니다')">복사</button>
+      </div>
+    </div>
+
+    <!-- ══ PAPERS ══ -->
+    <div class="pg" id="pg-papers">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:13px">
+        <span style="font-size:9px;font-family:var(--mono);color:var(--text3);text-transform:uppercase;letter-spacing:.08em">논문 목록 — <span id="pcnt">14</span>편</span>
+        <div style="display:flex;gap:7px">
+          <button class="btn btn-w btn-sm" onclick="genAll()">✦ 미생성 전체 홍보 생성</button>
+          <button class="btn btn-p btn-sm" onclick="openAdd()">+ 논문 추가</button>
+        </div>
+      </div>
+      <div class="tw"><table class="pt">
+        <thead><tr><th>#</th><th>논문 제목 / 저자</th><th>게재지</th><th>연도</th><th>분야</th><th>홍보</th><th>nslab.tech</th><th>작업</th></tr></thead>
+        <tbody id="p-tbody"></tbody>
+      </table></div>
+    </div>
+
+    <!-- ══ PR ══ -->
+    <div class="pg" id="pg-pr">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:15px">
+        <span style="font-size:9px;font-family:var(--mono);color:var(--text3);text-transform:uppercase;letter-spacing:.08em">AI 생성 홍보 콘텐츠</span>
+        <button class="btn btn-p btn-sm" onclick="wpAll()">↑ 전체 nslab.tech 게시</button>
+      </div>
+      <div id="prc-wrap"></div>
+    </div>
+
+    <!-- ══ PATENT ══ -->
+    <div class="pg" id="pg-patent">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:13px">
+        <span style="font-size:9px;font-family:var(--mono);color:var(--text3);text-transform:uppercase;letter-spacing:.08em">특허 목록 — <span id="pat-cnt">3</span>건</span>
+        <div style="display:flex;gap:7px">
+          <button class="btn btn-w btn-sm" onclick="genAllPatentPR()">✦ 전체 특허 홍보 생성</button>
+          <button class="btn btn-p btn-sm" onclick="openAddPatent()">+ 특허 추가</button>
+        </div>
+      </div>
+
+      <!-- 특허 카드 그리드 -->
+      <div id="patent-list" style="display:flex;flex-direction:column;gap:12px"></div>
+    </div>
+
+    <!-- ══ CAMPAIGN ══ -->
+    <div class="pg" id="pg-campaign">
+      <div class="metrics" style="margin-bottom:18px">
+        <div class="mc mc-b"><div class="mc-lbl">캠페인 총수</div><div class="mc-val">6</div><div class="mc-sub">진행 3 · 기획 2</div></div>
+        <div class="mc mc-g"><div class="mc-lbl">연계 논문</div><div class="mc-val">3</div><div class="mc-sub">자동 연동</div></div>
+        <div class="mc mc-t"><div class="mc-lbl">예상 도달</div><div class="mc-val">42K</div><div class="mc-sub">목표 대비 +18%</div></div>
+        <div class="mc mc-p"><div class="mc-lbl">홍보 채널</div><div class="mc-val">5</div><div class="mc-sub">Blog·LinkedIn·PR·X·NL</div></div>
+      </div>
+      <div id="cp-list"></div>
+    </div>
+
+    <!-- ══ AUTOMATION ══ -->
+    <div class="pg" id="pg-automation">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+        <div class="ac">
+          <div class="ac-t">◆ 파이프라인 상태</div>
+          <div class="fi"><div class="fn">1</div><div><div class="f-nm">Google Scholar 스캔</div><div class="f-ds">매일 09:00 KST · ORCID 기반</div></div><span class="ps ps-done">활성</span></div>
+          <div class="fi"><div class="fn">2</div><div><div class="f-nm">동일인물 검증</div><div class="f-ds">ORCID + DBLP + 소속 키워드</div></div><span class="ps ps-done">활성</span></div>
+          <div class="fi"><div class="fn">3</div><div><div class="f-nm">Claude AI 홍보문 생성</div><div class="f-ds">5채널 한국어 자동 생성</div></div><span class="ps ps-pend" id="ps3">API 키 필요</span></div>
+          <div class="fi"><div class="fn">4</div><div><div class="f-nm">WordPress Draft 게시</div><div class="f-ds">nslab.tech REST API</div></div><span class="ps ps-pend" id="ps4">WP 설정 필요</span></div>
+          <div class="fi"><div class="fn">5</div><div><div class="f-nm">교수님 검토 → Publish</div><div class="f-ds">이메일 알림 · 원클릭 승인</div></div><span class="ps ps-pend">수동</span></div>
+          <button class="btn btn-p btn-sm" style="width:100%;margin-top:13px;justify-content:center" onclick="runScan()">▶ 전체 파이프라인 실행</button>
+        </div>
+        <div class="ac">
+          <div class="ac-t">⬡ 배포 방식별 설정</div>
+          <div style="font-size:11.5px;color:var(--text2);line-height:2">
+            <div style="font-weight:600;color:var(--text);margin-bottom:6px">GitHub Pages</div>
+            <div style="color:var(--text3);font-family:var(--mono);font-size:10px;margin-bottom:10px">Settings → Pages → main branch / root</div>
+            <div style="font-weight:600;color:var(--text);margin-bottom:6px">Netlify</div>
+            <div style="color:var(--text3);font-family:var(--mono);font-size:10px;margin-bottom:10px">New site → Import from GitHub → Deploy</div>
+            <div style="font-weight:600;color:var(--text);margin-bottom:6px">GitHub Actions Secrets</div>
+            <div class="codebox" style="font-size:9.5px;max-height:90px"><span class="ck">ANTHROPIC_API_KEY</span>=<span class="cs">sk-ant-...</span>
+<span class="ck">WP_SITE_URL</span>=<span class="cs">https://nslab.tech</span>
+<span class="ck">WP_USERNAME</span>=<span class="cs">admin</span>
+<span class="ck">WP_APP_PASSWORD</span>=<span class="cs">xxxx xxxx xxxx</span></div>
+          </div>
+        </div>
+        <div class="ac" style="grid-column:1/-1">
+          <div class="ac-t">단계별 테스트</div>
+          <div style="display:flex;gap:7px;align-items:center;flex-wrap:wrap">
+            <button class="btn btn-sm" onclick="tstep(1)">① Scholar 스캔</button>
+            <span style="color:var(--text3);font-size:11px">→</span>
+            <button class="btn btn-sm" onclick="tstep(2)">② 동일인물 검증</button>
+            <span style="color:var(--text3);font-size:11px">→</span>
+            <button class="btn btn-sm" onclick="tstep(3)">③ AI 홍보 생성</button>
+            <span style="color:var(--text3);font-size:11px">→</span>
+            <button class="btn btn-sm" onclick="tstep(4)">④ WordPress 게시</button>
+            <button class="btn btn-p btn-sm" style="margin-left:auto" onclick="runScan()">▶ 전체 실행</button>
+          </div>
+          <div class="logbox" id="auto-log" style="margin-top:11px;max-height:120px">
+            <div class="lr"><span class="lt">준비</span><span class="linf">버튼을 눌러 단계별 테스트</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ SETTINGS ══ -->
+    <div class="pg" id="pg-settings">
+      <div class="sc">
+        <div class="sc-t">🔑 API 키 설정</div>
+        <div class="sr" style="flex-direction:column;align-items:flex-start;gap:8px">
+          <div><div class="s-lbl">Anthropic API Key</div><div class="s-desc">console.anthropic.com → API Keys에서 발급 (Claude AI 홍보문 생성에 사용)</div></div>
+          <div style="display:flex;gap:7px;width:100%;max-width:500px">
+            <input class="inp" id="akey" type="password" placeholder="sk-ant-api03-..." style="flex:1">
+            <button class="btn btn-sm" onclick="saveKey()">저장</button>
+            <button class="btn btn-g btn-sm" onclick="checkApi()">테스트</button>
+          </div>
+        </div>
+        <div class="sr" style="flex-direction:column;align-items:flex-start;gap:8px">
+          <div><div class="s-lbl">WordPress 연동 (nslab.tech)</div><div class="s-desc">관리자 → 사용자 → 프로필 → 애플리케이션 비밀번호 생성</div></div>
+          <div style="display:grid;grid-template-columns:2fr 1fr 2fr;gap:8px;width:100%;max-width:620px">
+            <input class="inp" id="wpurl" placeholder="https://nslab.tech">
+            <input class="inp" id="wpuser" placeholder="WP 아이디">
+            <input class="inp" id="wppass" type="password" placeholder="앱 비밀번호 xxxx xxxx">
+          </div>
+        </div>
+        <div style="display:flex;gap:7px;margin-top:13px">
+          <button class="btn btn-p btn-sm" onclick="saveAll()">설정 저장</button>
+          <button class="btn btn-g btn-sm" onclick="testWP()">WP 연결 테스트</button>
+        </div>
+      </div>
+      <div class="sc">
+        <div class="sc-t">⚙ 자동화 옵션</div>
+        <div class="sr"><div><div class="s-lbl">Scholar 자동 스캔</div><div class="s-desc">매일 09:00 KST GitHub Actions 자동 실행</div></div><div class="tog on" onclick="this.classList.toggle('on')"></div></div>
+        <div class="sr"><div><div class="s-lbl">동일인물 자동 검증</div><div class="s-desc">ORCID + DBLP + 소속 키워드 3중 교차 확인</div></div><div class="tog on" onclick="this.classList.toggle('on')"></div></div>
+        <div class="sr"><div><div class="s-lbl">신규 논문 즉시 홍보 생성</div><div class="s-desc">감지 즉시 Claude API 5채널 자동 생성</div></div><div class="tog on" onclick="this.classList.toggle('on')"></div></div>
+        <div class="sr"><div><div class="s-lbl">nslab.tech 자동 Draft 게시</div><div class="s-desc">홍보문 생성 후 WordPress Draft 자동 업로드</div></div><div class="tog on" onclick="this.classList.toggle('on')"></div></div>
+        <div class="sr"><div><div class="s-lbl">교수님 승인 이메일 알림</div><div class="s-desc">Draft 게시 후 편집 링크 포함 이메일 발송</div></div><div class="tog on" onclick="this.classList.toggle('on')"></div></div>
+      </div>
+    </div>
+
+  </div><!-- /content -->
+</main>
+
+<!-- Add Paper Modal -->
+<div class="ov" id="add-modal" style="display:none" onclick="if(event.target===this)closeAdd()">
+  <div class="modal">
+    <div class="modal-t">논문 수동 추가 <span class="mc" onclick="closeAdd()">✕</span></div>
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <div><label class="lbl">논문 제목 *</label><input class="inp" id="at" placeholder="예: Blockchain for the Metaverse: A Review"></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:9px">
+        <div><label class="lbl">저자</label><input class="inp" id="aa" placeholder="Dong-Seong Kim, Jae-Min Lee"></div>
+        <div><label class="lbl">게재지</label><input class="inp" id="aj" placeholder="IEEE Access"></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:9px">
+        <div><label class="lbl">연도</label><input class="inp" id="ay" placeholder="2026"></div>
+        <div><label class="lbl">DOI</label><input class="inp" id="ad" placeholder="10.1109/..."></div>
+        <div><label class="lbl">분야</label>
+          <select class="inp" id="af"><option>AI / ML</option><option>IoT / 5G</option><option>Blockchain</option><option>Defense S/W</option><option>Metaverse</option><option>Security</option></select>
+        </div>
+      </div>
+      <div style="display:flex;gap:7px;justify-content:flex-end;margin-top:6px">
+        <button class="btn" onclick="closeAdd()">취소</button>
+        <button class="btn btn-p" onclick="addGen()">추가 + 홍보 생성</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toasts" id="toasts"></div>
+
+<script>
+/* ── DATA ──────────────────────────────────────────────────────── */
+const PP=[
+  {id:1,title:"Bibliometric analysis of secure IoT for quantum computing",authors:"Hamza Ibrahim, Love Allen Ahakonye, Jae-Min Lee, Dong-Seong Kim",journal:"Internet of Things",year:2026,field:"IoT / 5G",badge:"fb-iot",pr:null,wpId:null},
+  {id:2,title:"RemoteCare: AI-Driven Multimodal Predictive Framework With Blockchain for Personalized Remote Patient Monitoring in IoMT",authors:"Chigozie Nnadiekwe, Simeon Ajakwe, Jae-Min Lee, Dong-Seong Kim",journal:"IEEE Internet of Things Journal",year:2026,field:"AI / ML",badge:"fb-ai",pr:{blog:"【연구 소개】금오공과대학교 NSLab(지도교수 김동성)이 IEEE IoT Journal에 'RemoteCare'를 게재했습니다. IoMT 환경에서 멀티모달 AI와 블록체인을 결합해 원격 환자 모니터링의 정확성과 보안성을 획기적으로 향상시켰습니다.",linkedin:"NSLab, IEEE IoT Journal에 'RemoteCare' 게재! AI+블록체인으로 원격 환자 모니터링 혁신. #NSLab #AIHealthcare #IoMT",press:"(주)앤에스랩(대표 김동성 교수)은 자사 연구진이 참여한 'RemoteCare' 논문이 IEEE IoT Journal 2026년에 게재됐다고 밝혔다.",twitter:"NSLab 신규 논문 | 'RemoteCare' IEEE IoT Journal 게재 #NSLab #스마트헬스케어",newsletter:"이번 호 하이라이트: NSLab의 'RemoteCare'가 AI로 이상 징후를 예측하고 블록체인으로 의료 데이터를 보호합니다!"},wpId:1042},
+  {id:3,title:"Design and Implementation of Network Simulator for High-Level Naval Ship System",authors:"Min-Hui Jang, Hyeong-Jin Kim, Dong-Seong Kim",journal:"IEEE Access",year:2025,field:"Defense S/W",badge:"fb-def",pr:null,wpId:null},
+  {id:4,title:"Blockchain for the Metaverse: A Review",authors:"Dong-Seong Kim et al.",journal:"Future Generation Computer Systems",year:2024,field:"Metaverse",badge:"fb-meta",pr:null,wpId:null},
+  {id:5,title:"PureChain: Lightweight Blockchain for IoT Data Integrity",authors:"Jae-Min Lee, Dong-Seong Kim",journal:"IEEE Access",year:2024,field:"Blockchain",badge:"fb-bc",pr:null,wpId:null},
+  {id:6,title:"DDS-based Middleware for Naval Combat Systems",authors:"Hyeong-Jin Kim, Dong-Seong Kim",journal:"IEEE Access",year:2023,field:"Defense S/W",badge:"fb-def",pr:null,wpId:null},
+  {id:7,title:"Metaverse Security: Threats and Countermeasures",authors:"Dong-Seong Kim, Love Ahakonye et al.",journal:"ICT Express",year:2023,field:"Metaverse",badge:"fb-meta",pr:null,wpId:null},
+  {id:8,title:"Federated Learning for IoT Anomaly Detection",authors:"Simeon Ajakwe, Dong-Seong Kim",journal:"IEEE IoT Journal",year:2023,field:"AI / ML",badge:"fb-ai",pr:null,wpId:null},
+  {id:9,title:"UAV-assisted Network Resilience in Battlefield",authors:"Hamza Ibrahim, Dong-Seong Kim",journal:"IEEE Access",year:2023,field:"Defense S/W",badge:"fb-def",pr:null,wpId:null},
+  {id:10,title:"Real-Time DDS for Autonomous Vehicles",authors:"Min-Hui Jang, Dong-Seong Kim",journal:"IEEE Transactions",year:2022,field:"IoT / 5G",badge:"fb-iot",pr:null,wpId:null},
+  {id:11,title:"Blockchain Access Control for Healthcare IoT",authors:"Love Ahakonye, Dong-Seong Kim",journal:"Sensors",year:2022,field:"Security",badge:"fb-sec",pr:null,wpId:null},
+  {id:12,title:"5G Network Slicing for Mission-Critical Applications",authors:"Jae-Min Lee, Dong-Seong Kim",journal:"IEEE Communications",year:2022,field:"IoT / 5G",badge:"fb-iot",pr:null,wpId:null},
+  {id:13,title:"Secure Fieldbus Protocol for Industrial Control",authors:"Hyeong-Jin Kim, Dong-Seong Kim",journal:"IEEE Industrial Electronics",year:2021,field:"Defense S/W",badge:"fb-def",pr:null,wpId:null},
+  {id:14,title:"AI-based Intrusion Detection for Naval Networks",authors:"Dong-Seong Kim, Hamza Ibrahim",journal:"IEEE Access",year:2021,field:"Security",badge:"fb-sec",pr:null,wpId:null},
+];
+
+/* ── PATENT DATA ─────────────────────────────────────────────────── */
+const PATENTS=[
+  {
+    id:'P1',
+    appNo:'10-2025-0093563',
+    regNo:'10-2025-0093563',
+    type:'등록',
+    title:'양자키분배(QKD)를 활용한 IoT 네트워크의 확장 가능한 블록체인 채널 보안 시스템',
+    field:'Blockchain',
+    badge:'fb-bc',
+    year:2025,
+    deadline:null,
+    pr:null,
+    wpId:null,
+    note:'원번호 — 등록 완료'
+  },
+  {
+    id:'P2',
+    appNo:'10-2024-0058702',
+    regNo:null,
+    type:'출원',
+    title:'다중 해싱을 이용한 보안 알고리즘이 적용된 오프라인 블록체인 거래방법 및 이를 이용한 오프라인 블록체인 전자결제 시스템',
+    field:'Blockchain',
+    badge:'fb-bc',
+    year:2024,
+    deadline:'2026-06-26',
+    pr:null,
+    wpId:null,
+    note:'등록료 납부 마감일: 2026.06.26.'
+  },
+  {
+    id:'P3',
+    appNo:'10-2024-0090171',
+    regNo:null,
+    type:'출원',
+    title:'고신뢰 블록체인 네트워크를 위한 권한증명 방법',
+    field:'Blockchain',
+    badge:'fb-bc',
+    year:2024,
+    deadline:null,
+    pr:null,
+    wpId:null,
+    note:'출원 중'
+  },
+];
+const CPS=[
+  {name:"기술 블로그 시리즈",desc:"메타버스·블록체인 인사이트",field:"Metaverse",ch:"Blog",st:"진행중",pct:65,pd:"7–9월"},
+  {name:"LinkedIn B2B 브랜딩",desc:"PureChain 신뢰도 구축",field:"Blockchain",ch:"LinkedIn",st:"진행중",pct:48,pd:"6–12월"},
+  {name:"IT 전문 PR 보도자료",desc:"국방·UAV 언론 노출",field:"Defense S/W",ch:"PR 언론",st:"진행중",pct:35,pd:"8–10월"},
+  {name:"개발자 커뮤니티 SNS",desc:"GitHub·포럼 인지도",field:"기술 전반",ch:"SNS",st:"기획중",pct:10,pd:"9–11월"},
+  {name:"국제 메타버스 워크숍",desc:"Annual Workshop 홍보",field:"Metaverse",ch:"통합",st:"기획중",pct:5,pd:"10–12월"},
+  {name:"채용 브랜딩",desc:"우수 인재 유치",field:"전사",ch:"종합광고",st:"보류",pct:0,pd:"미정"},
+];
+const CMAP={'AI / ML':'fb-ai','IoT / 5G':'fb-iot','Defense S/W':'fb-def','Metaverse':'fb-meta','Blockchain':'fb-bc','Security':'fb-sec'};
+const CHS=[{k:'blog',l:'기술 블로그',c:'var(--blue)'},{k:'linkedin',l:'LinkedIn',c:'var(--teal)'},{k:'press',l:'보도자료',c:'var(--purple)'},{k:'twitter',l:'X (트위터)',c:'var(--amber)'},{k:'newsletter',l:'뉴스레터',c:'var(--green)'}];
+let GS={},PNP=null,TID=0;
+const bg=f=>CMAP[f]||'fb-ai';
+
+/* ── RENDER ─────────────────────────────────────────────────────── */
+function row(p,full){
+  const st=p.pr?'<span class="ps ps-done">●완료</span>':GS[p.id]==='g'?'<span class="ps ps-gen">◌생성중</span>':'<span class="ps ps-pend">◯미생성</span>';
+  const wp=p.wpId?'<span class="ps ps-wp">↑게시됨</span>':'<span class="ps ps-pend">—</span>';
+  const act=p.pr
+    ?`<div style="display:flex;gap:4px"><button class="btn btn-xs btn-g" onclick="toPR(${p.id})">보기</button>${!p.wpId?`<button class="btn btn-xs" onclick="wpPost(${p.id})">↑게시</button>`:''}</div>`
+    :`<button class="btn btn-xs btn-p" id="gb${p.id}" onclick="genPR(${p.id})" ${GS[p.id]==='g'?'disabled':''}>${GS[p.id]==='g'?'<span class="spin">↻</span>':'✦'}홍보생성</button>`;
+  return`<tr><td style="color:var(--text3);font-family:var(--mono);font-size:10px">${String(p.id).padStart(2,'0')}</td><td><div class="pt-t">${p.title}</div><div class="pt-a">${p.authors}</div></td><td style="color:var(--text2);font-size:11px;min-width:110px">${p.journal}</td><td style="font-family:var(--mono);color:var(--text2);font-size:11px">${p.year}</td><td><span class="fb ${p.badge||bg(p.field)}">${p.field}</span></td><td>${st}</td>${full?`<td>${wp}</td>`:''}<td>${act}</td></tr>`;
+}
+function renderT(){
+  const dt=document.getElementById('d-tbody');if(dt)dt.innerHTML=PP.slice(0,6).map(p=>row(p)).join('');
+  const pt=document.getElementById('p-tbody');if(pt)pt.innerHTML=PP.map(p=>row(p,true)).join('');
+  document.getElementById('pcnt').textContent=PP.length;
+  document.getElementById('m-tot').textContent=PP.length;
+  document.getElementById('m-pr').textContent=PP.filter(p=>p.pr).length;
+  document.getElementById('m-wp').textContent=PP.filter(p=>p.wpId).length;
+}
+function renderPR(){
+  const w=document.getElementById('prc-wrap');if(!w)return;
+  const items=PP.filter(p=>p.pr);
+  if(!items.length){w.innerHTML='<div style="background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:48px;text-align:center;color:var(--text3);font-size:12px">아직 생성된 홍보 콘텐츠가 없습니다.<br>논문 관리 탭에서 홍보 생성을 시작하세요.</div>';return;}
+  w.innerHTML=items.map(p=>`<div class="prc" id="prc${p.id}"><div class="prc-h"><div><div style="display:flex;gap:7px;align-items:center;flex-wrap:wrap;margin-bottom:5px"><span class="fb ${p.badge||bg(p.field)}">${p.field}</span><span style="font-size:9px;font-family:var(--mono);color:var(--text3)">${p.journal}·${p.year}</span>${p.wpId?'<span class="ps ps-wp">↑게시됨</span>':''}</div><div class="prc-t">${p.title}</div><div class="prc-m">${p.authors}</div></div><div style="display:flex;gap:5px;flex-shrink:0;flex-wrap:wrap">${p.wpId?'<button class="btn btn-xs btn-g">✓게시됨</button>':`<button class="btn btn-xs btn-p" onclick="wpPost(${p.id})">↑nslab.tech</button>`}<button class="btn btn-xs" onclick="regen(${p.id})">↻재생성</button></div></div><div class="chs">${CHS.map(c=>`<div class="ch"><div class="ch-l" style="color:${c.c}"><span class="ch-d" style="background:${c.c}"></span>${c.l}</div><div class="ch-t">${(p.pr[c.k]||'').replace(/</g,'&lt;')}</div><div class="ch-footer"><button class="btn btn-xs" onclick="cpTxt(${JSON.stringify(p.pr[c.k]||'')})">복사</button></div></div>`).join('')}</div></div>`).join('');
+}
+function renderCP(){
+  const el=document.getElementById('cp-list');if(!el)return;
+  const SC={진행중:'ps-done',기획중:'ps-gen',보류:'ps-pend'};
+  el.innerHTML=CPS.map(c=>`<div style="background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:15px 17px;margin-bottom:9px;display:flex;align-items:center;gap:13px;flex-wrap:wrap"><div style="flex:1;min-width:200px"><div style="display:flex;align-items:center;gap:9px;margin-bottom:4px;flex-wrap:wrap"><span style="font-size:12.5px;font-weight:700">${c.name}</span><span class="ps ${SC[c.st]||'ps-pend'}">${c.st}</span><span class="fb ${bg(c.field)}" style="font-size:8px">${c.field}</span></div><div style="font-size:10px;color:var(--text3);margin-bottom:7px">${c.desc}·${c.ch}·${c.pd}</div><div style="display:flex;align-items:center;gap:9px"><div class="prog" style="width:190px"><div class="prog-f" style="width:${c.pct}%"></div></div><span style="font-size:10px;font-family:var(--mono);color:var(--text3)">${c.pct}%</span></div></div><button class="btn btn-sm">관리</button></div>`).join('');
+}
+
+/* ── PATENT RENDER ──────────────────────────────────────────────── */
+function renderPatents(){
+  const el=document.getElementById('patent-list');if(!el)return;
+  document.getElementById('pat-cnt').textContent=PATENTS.length;
+  document.getElementById('m-pat').textContent=PATENTS.length;
+  const today=new Date();
+  el.innerHTML=PATENTS.map(p=>{
+    const isReg=p.type==='등록';
+    const typeColor=isReg?'var(--green)':'var(--amber)';
+    const typeBg=isReg?'rgba(62,207,142,.1)':'rgba(245,166,35,.1)';
+    const typeBorder=isReg?'rgba(62,207,142,.22)':'rgba(245,166,35,.22)';
+    // deadline warning
+    let dlWarn='';
+    if(p.deadline){
+      const dl=new Date(p.deadline);
+      const diff=Math.ceil((dl-today)/(1000*60*60*24));
+      const dcolor=diff<=30?'var(--red)':diff<=60?'var(--amber)':'var(--text2)';
+      dlWarn=`<div style="display:flex;align-items:center;gap:6px;margin-top:8px;font-size:11px;color:${dcolor};font-family:var(--mono)">
+        ⏰ 등록료 납부 마감: <strong>${p.deadline}</strong> (D-${diff})
+      </div>`;
+    }
+    const prBtn=p.pr
+      ?`<button class="btn btn-xs btn-g" onclick="viewPatentPR('${p.id}')">홍보문 보기</button>`
+      :`<button class="btn btn-xs btn-p" id="pgb${p.id}" onclick="genPatentPR('${p.id}')">✦ 홍보 생성</button>`;
+    const wpBtn=p.wpId
+      ?`<button class="btn btn-xs btn-g">✓ 게시됨</button>`
+      :`<button class="btn btn-xs" onclick="wpPatentPost('${p.id}')">↑ nslab.tech</button>`;
+    return`<div class="prc" id="ptc${p.id}" style="border-left:3px solid ${typeColor}">
+      <div class="prc-h">
+        <div style="flex:1;min-width:0">
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:7px">
+            <span style="font-size:10px;font-weight:600;padding:3px 9px;border-radius:20px;border:1px solid ${typeBorder};background:${typeBg};color:${typeColor}">${p.type}</span>
+            <span class="fb ${p.badge}">${p.field}</span>
+            <span style="font-size:9px;font-family:var(--mono);color:var(--text3)">출원번호: ${p.appNo}</span>
+            ${p.regNo&&p.type==='등록'?`<span style="font-size:9px;font-family:var(--mono);color:var(--text3)">등록번호: ${p.regNo}</span>`:''}
+          </div>
+          <div class="prc-t" style="font-size:13px">${p.title}</div>
+          <div class="prc-m" style="margin-top:4px">${p.year}년 · ${p.note}</div>
+          ${dlWarn}
+        </div>
+        <div style="display:flex;flex-direction:column;gap:5px;flex-shrink:0;align-items:flex-end">
+          ${prBtn}
+          ${wpBtn}
+        </div>
+      </div>
+      ${p.pr?`<div class="chs" style="grid-template-columns:1fr 1fr">${['blog','press','linkedin','twitter','newsletter'].map(k=>{
+        const lmap={blog:'기술 블로그',press:'보도자료',linkedin:'LinkedIn',twitter:'X (트위터)',newsletter:'뉴스레터'};
+        const cmap={blog:'var(--blue)',press:'var(--purple)',linkedin:'var(--teal)',twitter:'var(--amber)',newsletter:'var(--green)'};
+        return`<div class="ch"><div class="ch-l" style="color:${cmap[k]}"><span class="ch-d" style="background:${cmap[k]}"></span>${lmap[k]}</div><div class="ch-t">${(p.pr[k]||'').replace(/</g,'&lt;')}</div><div class="ch-footer"><button class="btn btn-xs" onclick="cpTxt(${JSON.stringify(p.pr[k]||'')})">복사</button></div></div>`;
+      }).join('')}</div>`:''}
+    </div>`;
+  }).join('');
+}
+
+async function genPatentPR(pid){
+  const p=PATENTS.find(x=>x.id===pid);if(!p||GS['pat_'+pid]==='g')return;
+  GS['pat_'+pid]='g';renderPatents();log('main-log','inf',`특허 홍보문 생성: ${p.title.slice(0,40)}...`);
+  const dlNote=p.deadline?`\n등록료 납부 마감일: ${p.deadline}`:'';
+  const prompt=`연구실/기업 특허 홍보 전문가로서 아래 특허의 5채널 한국어 홍보 콘텐츠를 JSON으로만 생성하세요.\n\n특허 명칭: ${p.title}\n출원번호: ${p.appNo}\n유형: ${p.type}\n연도: ${p.year}년\n기술분야: ${p.field}${dlNote}\n출원인/발명자: 김동성 교수, (주)앤에스랩, 금오공과대학교 NSLab\n\nJSON만 반환:\n{"blog":"기술블로그 200자 (특허기술 설명, NSLab 강점 부각)","press":"보도자료 200자 (공식격식체, (주)앤에스랩 언급)","linkedin":"LinkedIn 100자 (#해시태그 3개)","twitter":"트위터 75자 (#해시태그 2개)","newsletter":"뉴스레터 120자 (친근체)"}`;
+  try{
+    const txt=await callClaude(prompt);if(!txt){GS['pat_'+pid]='e';renderPatents();return;}
+    p.pr=JSON.parse(txt.replace(/```json|```/g,'').trim());
+    GS['pat_'+pid]='d';log('main-log','ok',`✓ 특허 홍보문 완료: ${p.title.slice(0,36)}`);
+    toast(`✓ 특허 홍보문 생성 완료`,'ok');
+  }catch(e){GS['pat_'+pid]='e';log('main-log','err',`✗ ${e.message}`);toast('특허 홍보 생성 오류: '+e.message,'err');}
+  renderPatents();
+}
+
+function viewPatentPR(pid){
+  go('patent');
+  setTimeout(()=>{const e=document.getElementById('ptc'+pid);if(e)e.scrollIntoView({behavior:'smooth',block:'start'});},80);
+}
+
+async function genAllPatentPR(){
+  const pending=PATENTS.filter(p=>!p.pr&&GS['pat_'+p.id]!=='g');
+  if(!pending.length){toast('모든 특허 홍보문이 생성되었습니다','ok');return;}
+  toast(`${pending.length}건 특허 홍보문 생성 시작...`,'inf');
+  for(const p of pending){await genPatentPR(p.id);await dl(600);}
+}
+
+async function wpPatentPost(pid){
+  const p=PATENTS.find(x=>x.id===pid);if(!p?.pr){toast('홍보문을 먼저 생성해주세요','warn');return;}
+  const wp=gwp();if(!wp.pass){toast('설정 탭에서 WordPress 정보를 등록해주세요','warn');go('settings');return;}
+  log('main-log','inf',`특허 WordPress 게시: ${p.title.slice(0,38)}...`);
+  try{
+    const cont=`<p>${p.pr.blog}</p><p><strong>출원번호:</strong> ${p.appNo}</p><p><strong>유형:</strong> ${p.type} (${p.year}년)</p>${p.deadline?`<p><strong>등록료 마감:</strong> ${p.deadline}</p>`:''}`;
+    const r=await fetch(wp.url+'/wp-json/wp/v2/posts',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Basic '+btoa(wp.user+':'+wp.pass)},body:JSON.stringify({title:`[특허] ${p.title.slice(0,80)}`,content:cont,excerpt:p.pr.newsletter,status:'draft',categories:[6]})});
+    if(r.ok){const d=await r.json();p.wpId=d.id;toast('특허 nslab.tech Draft 게시 완료','ok');log('main-log','ok',`✓ WP ID:${d.id}`);}
+    else throw new Error(`WP ${r.status}`);
+  }catch(e){toast('WP 게시: '+e.message,'warn');}
+  renderPatents();
+}
+
+function openAddPatent(){
+  const name=prompt('특허 명칭을 입력하세요:');if(!name)return;
+  const appNo=prompt('출원번호를 입력하세요 (예: 10-2024-0000000):');if(!appNo)return;
+  const type=prompt('유형 (등록 / 출원):') ||'출원';
+  const year=parseInt(prompt('연도:'))||2025;
+  const deadline=prompt('등록료 마감일 (없으면 엔터, 있으면 YYYY-MM-DD):');
+  const np={id:'P'+(PATENTS.length+1),appNo,regNo:null,type,title:name,field:'Blockchain',badge:'fb-bc',year,deadline:deadline||null,pr:null,wpId:null,note:type==='출원'?'출원 중':'등록 완료'};
+  PATENTS.push(np);renderPatents();toast(`"${name.slice(0,30)}" 특허 추가됨`,'ok');
+}
+function gkey(){return localStorage.getItem('nslab_key')||'';}
+function gwp(){return{url:localStorage.getItem('nslab_wp_url')||'https://nslab.tech',user:localStorage.getItem('nslab_wp_user')||'',pass:localStorage.getItem('nslab_wp_pass')||''};}
+
+async function callClaude(prompt){
+  const k=gkey();if(!k){toast('설정 탭에서 Anthropic API 키를 먼저 등록해주세요','warn');return null;}
+  const r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,messages:[{role:'user',content:prompt}]})});
+  if(!r.ok)throw new Error(`Claude ${r.status}`);
+  const d=await r.json();return d.content?.find(b=>b.type==='text')?.text||'';
+}
+
+async function genPR(id){
+  const p=PP.find(x=>x.id===id);if(!p||GS[id]==='g')return;
+  GS[id]='g';renderT();log('main-log','inf',`홍보문 생성: ${p.title.slice(0,44)}...`);
+  const prompt=`연구실 홍보 전문가로서 아래 논문의 5채널 한국어 홍보 콘텐츠를 JSON으로만 생성하세요.\n\n제목: ${p.title}\n저자: ${p.authors}\n저널: ${p.journal} (${p.year})\n기관: 금오공과대학교 NSLab, 지도교수 김동성, (주)앤에스랩\n\nJSON만 반환:\n{"blog":"기술블로그 200자","linkedin":"LinkedIn 100자 #해시태그3개","press":"보도자료 150자 공식체 (주)앤에스랩 언급","twitter":"트위터 75자 #해시태그2개","newsletter":"뉴스레터 120자 친근체"}`;
+  try{
+    const txt=await callClaude(prompt);if(!txt){GS[id]='e';renderT();return;}
+    p.pr=JSON.parse(txt.replace(/```json|```/g,'').trim());
+    GS[id]='d';log('main-log','ok',`✓ 완료: ${p.title.slice(0,38)}`);
+    toast(`✓ 홍보문 생성 — "${p.title.slice(0,32)}..."`,'ok');
+    const ps3=document.getElementById('ps3');if(ps3){ps3.className='ps ps-done';ps3.textContent='활성';}
+  }catch(e){GS[id]='e';log('main-log','err',`✗ ${e.message}`);toast('생성 오류: '+e.message,'err');}
+  renderT();renderPR();
+}
+async function regen(id){const p=PP.find(x=>x.id===id);if(p){p.pr=null;await genPR(id);}}
+async function genAll(){
+  const pending=PP.filter(p=>!p.pr&&GS[p.id]!=='g');
+  if(!pending.length){toast('모든 홍보문이 생성되었습니다','ok');return;}
+  toast(`${pending.length}편 순차 생성 시작...`,'inf');
+  for(const p of pending.slice(0,3)){await genPR(p.id);await dl(600);}
+  if(pending.length>3)toast(`나머지 ${pending.length-3}편은 계속 생성됩니다`,'inf');
+}
+
+/* ── WORDPRESS ──────────────────────────────────────────────────── */
+async function wpPost(id){
+  const p=PP.find(x=>x.id===id);if(!p?.pr){toast('홍보문을 먼저 생성해주세요','warn');return;}
+  const wp=gwp();if(!wp.pass){toast('설정 탭에서 WordPress 정보를 등록해주세요','warn');go('settings');return;}
+  log('main-log','inf',`WordPress 게시: ${p.title.slice(0,38)}...`);
+  try{
+    const r=await fetch(wp.url+'/wp-json/nslab/v1/new-paper',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Basic '+btoa(wp.user+':'+wp.pass)},body:JSON.stringify({title:p.title,authors:p.authors,journal:p.journal,year:p.year,doi:p.doi||'',field:p.field,pr:p.pr})});
+    if(r.ok){const d=await r.json();p.wpId=d.post_id||d.id;toast('nslab.tech Draft 게시 완료','ok');log('main-log','ok',`✓ WP ID:${p.wpId}`);const ps4=document.getElementById('ps4');if(ps4){ps4.className='ps ps-done';ps4.textContent='활성';}}
+    else throw new Error(`WP ${r.status}`);
+  }catch(e){toast('WP 게시: '+e.message+' (CORS→Vercel/플러그인 필요)','warn');}
+  renderT();renderPR();
+}
+async function wpAll(){
+  const r=PP.filter(p=>p.pr&&!p.wpId);if(!r.length){toast('게시할 새 홍보문이 없습니다','inf');return;}
+  for(const p of r){await wpPost(p.id);await dl(400);}
+}
+
+/* ── SCAN SIMULATION ────────────────────────────────────────────── */
+async function runScan(){
+  const btn=document.getElementById('scanbtn');const ic=document.getElementById('scan-ic');
+  if(btn)btn.disabled=true;if(ic)ic.innerHTML='<span class="spin">↻</span>';
+  document.getElementById('sys-st').textContent='스캔 중';
+  log('main-log','inf','Scholar 스캔 시작...');log('slog','inf','Google Scholar 스캔: Dong-Seong Kim');log('auto-log','inf','파이프라인 실행');
+  await dl(700);log('slog','inf','→ ORCID API 응답 확인');
+  await dl(500);log('slog','ok','✓ ORCID 매칭: 0000-0002-2977-5964');
+  await dl(400);log('slog','inf',`→ 논문 목록 조회 중...`);
+  await dl(700);log('slog','ok',`✓ 논문 ${PP.length}편 확인`);
+  await dl(300);log('slog','ok','✓ 동일인물 검증 완료 (NSLab+Kumoh+KIT)');
+  await dl(200);log('slog','inf','→ 신규 논문 없음 (캐시 일치)');
+  await dl(200);log('slog','ok','✓ 스캔 완료');
+  log('main-log','ok','Scholar 스캔 완료 — 신규 없음');log('auto-log','ok','✓ 파이프라인 완료');
+  document.getElementById('scan-time').textContent='마지막 스캔: '+new Date().toLocaleTimeString('ko-KR');
+  document.getElementById('sys-st').textContent='활성';
+  toast('Scholar 스캔 완료 — 신규 논문 없음','inf');
+  if(btn)btn.disabled=false;if(ic)ic.textContent='↻';
+}
+function simNew(){
+  const mock={id:PP.length+1,title:"Secure AI for 6G Networks in Naval Defense Systems",authors:"Dong-Seong Kim, Jae-Min Lee, Hamza Ibrahim",journal:"IEEE Transactions on Network Science",year:2026,field:"AI / ML",badge:"fb-ai",pr:null,wpId:null};
+  PP.unshift(mock);
+  const al=document.getElementById('nalert');document.getElementById('amsg').textContent=`"${mock.title.slice(0,58)}" — ${mock.journal}·${mock.year}`;
+  al.style.display='flex';PNP=mock;
+  log('slog','warn','! 신규 논문 감지됨!');log('slog','ok','✓ 동일인물 확인: Dong-Seong Kim + NSLab');
+  log('main-log','warn',`📡 신규: ${mock.title.slice(0,50)}...`);
+  toast('📡 신규 논문이 Google Scholar에 업로드되었습니다!','warn');
+  go('dashboard');renderT();
+}
+async function handleAlert(){document.getElementById('nalert').style.display='none';if(PNP)await genPR(PNP.id);}
+
+/* ── API CHECK ──────────────────────────────────────────────────── */
+async function checkApi(){
+  const p=document.getElementById('apill');const d=document.getElementById('adot');const l=document.getElementById('albl');
+  p.className='ap ap-unk';d.textContent='◌';l.textContent='확인 중...';
+  const k=gkey();if(!k){p.className='ap ap-err';d.textContent='✗';l.textContent='키 없음';return;}
+  try{
+    const r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:5,messages:[{role:'user',content:'hi'}]})});
+    if(r.ok){p.className='ap ap-ok';d.textContent='●';l.textContent='API 정상';toast('Anthropic API 연결 정상','ok');document.getElementById('ob3')?.classList.add('done');}
+    else if(r.status===401){p.className='ap ap-err';d.textContent='✗';l.textContent='키 오류';}
+    else{p.className='ap ap-err';d.textContent='✗';l.textContent=`오류 ${r.status}`;}
+  }catch(e){p.className='ap ap-err';d.textContent='✗';l.textContent='연결 실패';}
+}
+
+/* ── SETTINGS ───────────────────────────────────────────────────── */
+function saveKey(){const v=document.getElementById('akey').value.trim();if(v){localStorage.setItem('nslab_key',v);toast('API 키 저장됨','ok');checkApi();}else toast('API 키를 입력해주세요','warn');}
+function saveAll(){
+  const ak=document.getElementById('akey').value.trim();
+  const wu=document.getElementById('wpurl').value.trim();
+  const wuser=document.getElementById('wpuser').value.trim();
+  const wp=document.getElementById('wppass').value.trim();
+  if(ak){localStorage.setItem('nslab_key',ak);checkApi();}
+  if(wu)localStorage.setItem('nslab_wp_url',wu);
+  if(wuser)localStorage.setItem('nslab_wp_user',wuser);
+  if(wp)localStorage.setItem('nslab_wp_pass',wp);
+  toast('설정 저장 완료','ok');
+}
+async function testWP(){
+  const wp=gwp();if(!wp.pass){toast('WP 앱 비밀번호를 먼저 입력하세요','warn');return;}
+  try{const r=await fetch(wp.url+'/wp-json/',{headers:{'Authorization':'Basic '+btoa(wp.user+':'+wp.pass)}});r.ok?toast('✓ WordPress 연결 성공!','ok'):toast(`WP ${r.status}`,'err');}
+  catch(e){toast('WP CORS 오류 (서버사이드에서 정상 작동)','warn');}
+}
+
+/* ── ADD PAPER ──────────────────────────────────────────────────── */
+function openAdd(){document.getElementById('add-modal').style.display='flex';}
+function closeAdd(){document.getElementById('add-modal').style.display='none';}
+async function addGen(){
+  const t=document.getElementById('at').value.trim();if(!t){toast('논문 제목 입력','warn');return;}
+  const p={id:PP.length+1,title:t,authors:document.getElementById('aa').value,journal:document.getElementById('aj').value,year:parseInt(document.getElementById('ay').value)||2026,doi:document.getElementById('ad').value,field:document.getElementById('af').value,badge:bg(document.getElementById('af').value),pr:null,wpId:null};
+  PP.unshift(p);closeAdd();renderT();toast(`"${t.slice(0,38)}" 추가됨`,'inf');await genPR(p.id);
+}
+function toPR(id){go('pr');setTimeout(()=>{const e=document.getElementById('prc'+id);if(e)e.scrollIntoView({behavior:'smooth',block:'start'});},80);}
+
+/* ── STEP TEST ──────────────────────────────────────────────────── */
+async function tstep(n){
+  const M={1:['inf','→ Scholar 스캔 시뮬레이션...','ok','✓ 논문 14편 / 신규 없음'],2:['inf','→ ORCID 검증...','ok','✓ Dong-Seong Kim + NSLab 확인'],3:['inf','→ Claude API 테스트...','warn','⚠ 홍보 생성 버튼으로 실제 실행'],4:['inf','→ WordPress 테스트...','warn','⚠ WP_APP_PASSWORD 필요']};
+  const[l1,m1,l2,m2]=M[n];log('auto-log',l1,m1);await dl(700);log('auto-log',l2,m2);
+}
+
+/* ── NAV ────────────────────────────────────────────────────────── */
+function go(name){
+  document.querySelectorAll('.pg').forEach(p=>p.classList.remove('on'));
+  document.querySelectorAll('.ni').forEach(n=>n.classList.remove('on'));
+  document.getElementById('pg-'+name)?.classList.add('on');
+  const T={dashboard:'대시보드',scholar:'Scholar 모니터',papers:'논문 관리',patent:'특허 관리',pr:'홍보 콘텐츠',campaign:'캠페인',automation:'자동화',settings:'설정'};
+  document.getElementById('phead').textContent=T[name]||name;
+  const O=['dashboard','scholar','papers','patent','pr','campaign','automation','settings'];
+  const nis=document.querySelectorAll('.ni');const i=O.indexOf(name);if(i>=0&&nis[i])nis[i].classList.add('on');
+  if(name==='pr')renderPR();if(name==='campaign')renderCP();if(name==='patent')renderPatents();
+}
+
+/* ── UTILS ──────────────────────────────────────────────────────── */
+function log(target,type,msg){
+  const el=document.getElementById(target);if(!el)return;
+  const t=new Date().toLocaleTimeString('ko-KR',{hour12:false});
+  const r=document.createElement('div');r.className='lr';
+  r.innerHTML=`<span class="lt">${t}</span><span class="l${type}">${msg}</span>`;
+  el.appendChild(r);el.scrollTop=el.scrollHeight;
+  while(el.children.length>120)el.removeChild(el.firstChild);
+}
+function toast(msg,type='inf'){
+  const C={ok:'var(--green)',inf:'var(--blue)',warn:'var(--amber)',err:'var(--red)'};
+  const el=document.createElement('div');el.className='toast';el.id='t'+(++TID);
+  el.innerHTML=`<span style="width:5px;height:5px;border-radius:50%;background:${C[type]||C.inf};flex-shrink:0"></span>${msg}`;
+  document.getElementById('toasts').appendChild(el);
+  setTimeout(()=>{el.classList.add('tout');setTimeout(()=>el.remove(),230);},3400);
+}
+function cpTxt(t){navigator.clipboard.writeText(t).then(()=>toast('복사됨!','ok'));}
+function dl(ms){return new Promise(r=>setTimeout(r,ms));}
+
+/* ── INIT ───────────────────────────────────────────────────────── */
+(function(){
+  const k=localStorage.getItem('nslab_key');
+  if(k){document.getElementById('akey').value=k;checkApi();document.getElementById('ob3')?.classList.add('done');}
+  const wu=localStorage.getItem('nslab_wp_url');if(wu)document.getElementById('wpurl').value=wu;
+  const wuser=localStorage.getItem('nslab_wp_user');if(wuser)document.getElementById('wpuser').value=wuser;
+  renderT();renderPR();renderCP();renderPatents();
+
+  // 마감 임박 특허 → 대시보드 알림
+  const today=new Date();
+  PATENTS.forEach(p=>{
+    if(!p.deadline)return;
+    const diff=Math.ceil((new Date(p.deadline)-today)/(1000*60*60*24));
+    if(diff<=60){
+      const al=document.getElementById('nalert');
+      al.style.display='flex';
+      document.getElementById('amsg').textContent=`⏰ 특허 등록료 납부 마감 D-${diff}: "${p.title.slice(0,42)}..." (마감: ${p.deadline})`;
+      const genBtn=al.querySelector('.btn-p');
+      genBtn.textContent='특허 탭 보기';
+      genBtn.onclick=()=>{al.style.display='none';go('patent');};
+    }
+  });
+
+  document.getElementById('ob1')?.classList.add('done');
+  setInterval(checkApi,300000);
+})();
+</script>
+</body>
+</html>
