@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NSLab 연구 뉴스</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f8fafc; --card:#ffffff; --border:#e2e8f0; --border2:#cbd5e1;
+  --blue:#2563eb; --blue2:#3b82f6; --blue3:#dbeafe;
+  --green:#059669; --green2:#d1fae5;
+  --yellow:#d97706; --yellow2:#fef3c7;
+  --purple:#7c3aed; --purple2:#ede9fe;
+  --red:#dc2626; --red2:#fee2e2;
+  --text:#0f172a; --text2:#475569; --text3:#94a3b8;
+  --mono:'JetBrains Mono',monospace; --sans:'Noto Sans KR',sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:13px;min-height:100vh;}
+
+/* ── HEADER ── */
+.header{background:#fff;border-bottom:1px solid var(--border);padding:14px 20px;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:100;box-shadow:0 1px 4px rgba(0,0,0,.06);}
+.header-logo{width:32px;height:32px;background:linear-gradient(135deg,var(--blue),var(--purple));border-radius:7px;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-weight:700;font-size:11px;color:#fff;}
+.header-title{font-weight:700;font-size:15px;}
+.header-sub{font-size:11px;color:var(--text3);margin-top:1px;}
+.header-right{margin-left:auto;display:flex;gap:8px;align-items:center;}
+.refresh-btn{padding:5px 12px;border-radius:6px;font-size:11px;font-family:var(--mono);cursor:pointer;border:1px solid var(--border2);background:#fff;color:var(--text2);transition:.15s;}
+.refresh-btn:hover{background:var(--border);color:var(--text);}
+.live-pill{font-size:10px;font-family:var(--mono);padding:3px 8px;border-radius:12px;background:var(--green2);color:var(--green);border:1px solid rgba(5,150,105,.2);display:flex;align-items:center;gap:4px;}
+.live-dot{width:6px;height:6px;border-radius:50%;background:var(--green);animation:pulse 2s infinite;}
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:.3;}}
+
+/* ── FILTER BAR ── */
+.filter-bar{padding:12px 20px;display:flex;gap:6px;align-items:center;background:#fff;border-bottom:1px solid var(--border);flex-wrap:wrap;}
+.filter-label{font-size:11px;color:var(--text3);font-family:var(--mono);margin-right:4px;}
+.ftag{padding:4px 12px;border-radius:20px;font-size:11px;cursor:pointer;border:1px solid var(--border);background:#fff;color:var(--text2);transition:.15s;font-family:var(--mono);}
+.ftag:hover{border-color:var(--blue2);color:var(--blue);}
+.ftag.active{background:var(--blue);color:#fff;border-color:var(--blue);}
+.search-wrap{margin-left:auto;}
+.search-input{padding:5px 10px;border-radius:6px;border:1px solid var(--border2);font-size:11px;font-family:var(--mono);outline:none;width:180px;background:#f8fafc;}
+.search-input:focus{border-color:var(--blue2);}
+
+/* ── STATS ── */
+.stats-bar{padding:12px 20px;display:flex;gap:16px;background:linear-gradient(135deg,#eff6ff,#f5f3ff);border-bottom:1px solid var(--border);}
+.stat-item{display:flex;align-items:center;gap:6px;}
+.stat-num{font-size:18px;font-weight:700;font-family:var(--mono);}
+.stat-lbl{font-size:11px;color:var(--text2);}
+.stat-divider{width:1px;background:var(--border2);}
+
+/* ── GRID ── */
+.news-grid{padding:16px 20px;display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px;}
+
+/* ── NEWS CARD ── */
+.news-card{background:var(--card);border:1px solid var(--border);border-radius:10px;overflow:hidden;transition:all .2s;cursor:pointer;}
+.news-card:hover{box-shadow:0 4px 20px rgba(37,99,235,.1);border-color:var(--blue2);transform:translateY(-2px);}
+.card-thumb{width:100%;aspect-ratio:9/16;max-height:220px;object-fit:cover;background:linear-gradient(135deg,#1e3a5f,#0a1628);display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;}
+.thumb-bg{width:100%;height:100%;position:relative;display:flex;flex-direction:column;padding:12px;}
+.thumb-label{font-size:8px;font-family:var(--mono);color:rgba(255,255,255,.5);letter-spacing:.15em;text-transform:uppercase;margin-bottom:4px;}
+.thumb-badge{display:inline-flex;align-items:center;gap:3px;font-size:8px;font-family:var(--mono);padding:2px 6px;border-radius:3px;margin-bottom:6px;width:fit-content;}
+.thumb-title{font-size:10px;font-weight:600;color:#f1f5f9;line-height:1.4;flex:1;}
+.thumb-journal{font-size:8px;color:rgba(255,255,255,.5);font-family:var(--mono);margin-top:4px;}
+.thumb-footer{margin-top:auto;display:flex;justify-content:space-between;align-items:center;}
+.thumb-lab{font-size:8px;color:rgba(255,255,255,.4);font-family:var(--mono);}
+
+.card-body{padding:10px 12px;}
+.card-type{display:inline-flex;align-items:center;gap:4px;font-size:10px;font-family:var(--mono);padding:2px 8px;border-radius:4px;margin-bottom:6px;}
+.card-title{font-size:12px;font-weight:600;line-height:1.45;color:var(--text);margin-bottom:4px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
+.card-journal{font-size:10px;color:var(--text3);font-family:var(--mono);margin-bottom:6px;}
+.card-authors{font-size:10px;color:var(--text2);margin-bottom:8px;}
+.card-footer{display:flex;align-items:center;justify-content:space-between;padding-top:8px;border-top:1px solid var(--border);}
+.card-date{font-size:10px;color:var(--text3);font-family:var(--mono);}
+.card-actions{display:flex;gap:5px;}
+.act-btn{padding:3px 8px;border-radius:4px;font-size:10px;font-family:var(--mono);cursor:pointer;border:1px solid var(--border);background:#fff;color:var(--text2);transition:.15s;}
+.act-btn:hover{border-color:var(--blue2);color:var(--blue);}
+.act-btn.primary{background:var(--blue);color:#fff;border-color:var(--blue);}
+
+/* type colors */
+.type-scie{background:var(--blue3);color:var(--blue);}
+.type-conf{background:var(--purple2);color:var(--purple);}
+.type-patent{background:var(--yellow2);color:var(--yellow);}
+
+/* ── MODAL ── */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:200;display:none;align-items:center;justify-content:center;padding:20px;}
+.modal-overlay.open{display:flex;}
+.modal{background:#fff;border-radius:14px;max-width:480px;width:100%;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.2);}
+.modal-header{padding:16px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
+.modal-title{font-size:14px;font-weight:700;}
+.modal-close{cursor:pointer;font-size:18px;color:var(--text3);background:none;border:none;padding:2px 6px;}
+.modal-body{padding:16px 18px;}
+.modal-thumb{width:100%;aspect-ratio:9/16;max-height:300px;border-radius:8px;overflow:hidden;margin-bottom:14px;}
+.share-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;}
+.share-btn{padding:7px 14px;border-radius:7px;font-size:11px;font-family:var(--mono);cursor:pointer;border:1px solid var(--border);display:flex;align-items:center;gap:5px;transition:.15s;background:#fff;color:var(--text);}
+.share-btn:hover{background:var(--border);}
+
+/* ── EMPTY / LOADING ── */
+.empty{text-align:center;padding:60px 20px;color:var(--text3);}
+.empty-icon{font-size:40px;margin-bottom:12px;}
+.empty-text{font-size:13px;}
+.loading{display:flex;align-items:center;justify-content:center;padding:60px;gap:10px;color:var(--text3);font-family:var(--mono);font-size:12px;}
+.spinner{width:20px;height:20px;border:2px solid var(--border);border-top-color:var(--blue);border-radius:50%;animation:spin .7s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+
+/* ── EMBED NOTICE (only shown when in iframe) ── */
+.embed-notice{display:none;background:var(--blue3);border-bottom:1px solid rgba(37,99,235,.2);padding:8px 20px;font-size:11px;color:var(--blue);text-align:center;}
+
+/* responsive */
+@media(max-width:600px){
+  .news-grid{grid-template-columns:1fr 1fr;padding:10px;}
+  .stats-bar{gap:10px;padding:10px 14px;}
+  .stat-num{font-size:15px;}
+  .filter-bar{padding:8px 12px;}
+}
+</style>
+</head>
+<body>
+
+<div class="embed-notice" id="embed-notice">
+  📡 NSLab 연구 뉴스 — Google Sheets 실시간 연동 · <a href="https://nslab-ltd.github.io/promotion-web/news-feed.html" target="_blank" style="color:var(--blue)">전체화면으로 보기</a>
+</div>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="header-logo">NS</div>
+  <div>
+    <div class="header-title">NSLab 연구 뉴스</div>
+    <div class="header-sub">금오공과대학교 NSLab · 김동성 교수 연구팀</div>
+  </div>
+  <div class="header-right">
+    <div class="live-pill"><div class="live-dot"></div>LIVE</div>
+    <button class="refresh-btn" onclick="loadFeed()">↻ 새로고침</button>
+  </div>
+</div>
+
+<!-- STATS -->
+<div class="stats-bar" id="stats-bar">
+  <div class="stat-item"><div class="stat-num" id="s-total" style="color:var(--blue)">—</div><div class="stat-lbl">전체 성과</div></div>
+  <div class="stat-divider"></div>
+  <div class="stat-item"><div class="stat-num" id="s-journal" style="color:var(--blue)">—</div><div class="stat-lbl">저널 논문</div></div>
+  <div class="stat-divider"></div>
+  <div class="stat-item"><div class="stat-num" id="s-conf" style="color:var(--purple)">—</div><div class="stat-lbl">학술대회</div></div>
+  <div class="stat-divider"></div>
+  <div class="stat-item"><div class="stat-num" id="s-patent" style="color:var(--yellow)">—</div><div class="stat-lbl">특허</div></div>
+  <div class="stat-divider"></div>
+  <div class="stat-item"><div class="stat-num" id="s-tech" style="color:var(--green)">—</div><div class="stat-lbl">기술이전</div></div>
+</div>
+
+<!-- FILTER BAR -->
+<div class="filter-bar">
+  <span class="filter-label">분류</span>
+  <div class="ftag active" onclick="setFilter('all',this)">전체</div>
+  <div class="ftag" onclick="setFilter('journal',this)">저널 논문</div>
+  <div class="ftag" onclick="setFilter('conf',this)">학술대회</div>
+  <div class="ftag" onclick="setFilter('patent',this)">특허</div>
+  <div class="ftag" onclick="setFilter('recent',this)">최근 1년</div>
+  <div class="search-wrap">
+    <input class="search-input" id="search" placeholder="🔍 논문 검색..." oninput="renderGrid()">
+  </div>
+</div>
+
+<!-- GRID -->
+<div class="news-grid" id="news-grid">
+  <div class="loading"><div class="spinner"></div>Google Sheets에서 데이터 불러오는 중...</div>
+</div>
+
+<!-- MODAL -->
+<div class="modal-overlay" id="modal" onclick="closeModal(event)">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="modal-title">논문 상세</div>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body" id="modal-body"></div>
+  </div>
+</div>
+
+<script>
+const SHEET_ID = '1xnZyzu_v9DSE4WFT7RZaR_uaS8hfo3vAcrgzqBNOUM8';
+let allItems = [];
+let filter = 'all';
+
+// ── JSONP LOADER ──
+function sheetFetch(sheet) {
+  return new Promise(res => {
+    const cb = 'nf_' + Math.random().toString(36).slice(2);
+    window[cb] = d => { delete window[cb]; document.getElementById('s_'+cb)?.remove(); res(d); };
+    const sc = document.createElement('script');
+    sc.id = 's_' + cb;
+    sc.src = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=responseHandler:${cb}&sheet=${encodeURIComponent(sheet)}`;
+    sc.onerror = () => { delete window[cb]; sc.remove(); res(null); };
+    document.head.appendChild(sc);
+  });
+}
+function gv(row, i) { const c = row.c && row.c[i]; return c && c.v != null ? String(c.v).trim() : ''; }
+
+// ── LOAD ──
+async function loadFeed() {
+  document.getElementById('news-grid').innerHTML = '<div class="loading"><div class="spinner"></div>불러오는 중...</div>';
+  allItems = [];
+
+  // 저널
+  const jd = await sheetFetch('논문(저널)');
+  if (jd?.table) {
+    jd.table.rows.forEach((r, i) => {
+      const t = gv(r,15), y = gv(r,2);
+      if (!t || !y || isNaN(+y)) return;
+      allItems.push({ id:'j'+i, title:t, authors:[gv(r,16),gv(r,17)].filter(Boolean).join(', '), journal:gv(r,19), year:+y, doi:gv(r,31), field:gv(r,10)==='01'?'SCIE':'ESCI', type:'journal' });
+    });
+  }
+
+  // 학술대회
+  const cd = await sheetFetch('논문(학술대회)');
+  if (cd?.table) {
+    cd.table.rows.forEach((r, i) => {
+      const t = gv(r,12), y = gv(r,2);
+      if (!t || !y || isNaN(+y)) return;
+      allItems.push({ id:'c'+i, title:t, authors:[gv(r,13),gv(r,14)].filter(Boolean).join(', '), journal:gv(r,16)||'학술대회', year:+y, doi:'', field:'Conference', type:'conf' });
+    });
+  }
+
+  // 특허
+  const pd = await sheetFetch('특허');
+  if (pd?.table) {
+    pd.table.rows.forEach((r, i) => {
+      const t = gv(r,14), y = gv(r,1);
+      if (!t || !y || isNaN(+y)) return;
+      const rg = gv(r,10)==='01'?'국내':'해외';
+      const st = gv(r,11)==='01'?'등록':'출원';
+      allItems.push({ id:'p'+i, title:t, authors:'김동성 외', journal:`${rg} ${st} 특허`, year:+y, doi:gv(r,12), field:'특허', type:'patent' });
+    });
+  }
+
+  // 기술이전
+  const td = await sheetFetch('기술이전');
+  let techCnt = 0;
+  if (td?.table) {
+    td.table.rows.forEach(r => {
+      const y = gv(r,1), n = gv(r,10);
+      if (y && n && !isNaN(+y)) techCnt++;
+    });
+  }
+
+  // 통계
+  document.getElementById('s-total').textContent = allItems.length;
+  document.getElementById('s-journal').textContent = allItems.filter(p=>p.type==='journal').length;
+  document.getElementById('s-conf').textContent = allItems.filter(p=>p.type==='conf').length;
+  document.getElementById('s-patent').textContent = allItems.filter(p=>p.type==='patent').length;
+  document.getElementById('s-tech').textContent = techCnt;
+
+  renderGrid();
+}
+
+// ── RENDER ──
+function setFilter(f, btn) {
+  filter = f;
+  document.querySelectorAll('.ftag').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderGrid();
+}
+
+function kwExtract(title) {
+  return ['CNN','LSTM','IoT','5G','6G','UAV','DRL','Blockchain','Federated','OFDM','MIMO','Edge','SDN','IIoT','RIS','XAI','LLM','AI','ML','Security','Drone','Wireless']
+    .filter(k => title.toUpperCase().includes(k.toUpperCase())).slice(0,3);
+}
+
+function typeStyle(type) {
+  if (type==='journal') return { cls:'type-scie', label:'저널 논문', icon:'📡', color:'#2563eb', bg:'#1e3a5f' };
+  if (type==='conf') return { cls:'type-conf', label:'학술대회', icon:'🎤', color:'#7c3aed', bg:'#1a1040' };
+  if (type==='patent') return { cls:'type-patent', label:'특허', icon:'💡', color:'#d97706', bg:'#1f1500' };
+  return { cls:'type-scie', label:'연구', icon:'📄', color:'#2563eb', bg:'#1e3a5f' };
+}
+
+function renderGrid() {
+  const q = document.getElementById('search').value.toLowerCase();
+  const now = new Date().getFullYear();
+
+  let items = [...allItems].sort((a,b) => b.year - a.year);
+
+  if (filter === 'journal') items = items.filter(p => p.type==='journal');
+  else if (filter === 'conf') items = items.filter(p => p.type==='conf');
+  else if (filter === 'patent') items = items.filter(p => p.type==='patent');
+  else if (filter === 'recent') items = items.filter(p => p.year >= now-1);
+
+  if (q) items = items.filter(p => p.title.toLowerCase().includes(q) || (p.authors||'').toLowerCase().includes(q) || (p.journal||'').toLowerCase().includes(q));
+
+  const grid = document.getElementById('news-grid');
+  if (!items.length) {
+    grid.innerHTML = '<div class="empty"><div class="empty-icon">🔍</div><div class="empty-text">검색 결과가 없습니다</div></div>';
+    return;
+  }
+
+  grid.innerHTML = items.slice(0, 60).map(p => {
+    const ts = typeStyle(p.type);
+    const kw = kwExtract(p.title);
+    const accentRgb = ts.color.replace('#','');
+    const r = parseInt(accentRgb.slice(0,2),16), g2 = parseInt(accentRgb.slice(2,4),16), b = parseInt(accentRgb.slice(4,6),16);
+
+    return `
+    <div class="news-card" onclick="openModal('${p.id}')">
+      <div class="card-thumb">
+        <div class="thumb-bg" style="background:linear-gradient(160deg,${ts.bg} 0%,#080c12 100%)">
+          <div style="position:absolute;left:0;top:0;width:3px;height:100%;background:${ts.color};border-radius:0 2px 2px 0"></div>
+          <div style="position:absolute;inset:0;background-image:linear-gradient(rgba(${r},${g2},${b},.04) 1px,transparent 1px),linear-gradient(90deg,rgba(${r},${g2},${b},.04) 1px,transparent 1px);background-size:20px 20px"></div>
+          <div style="position:relative;z-index:1;display:flex;flex-direction:column;height:100%;padding:10px 12px">
+            <div class="thumb-label">KUMOH NAT'L INST. OF TECH. · NSLab</div>
+            <div class="thumb-badge" style="background:rgba(${r},${g2},${b},.18);border:1px solid rgba(${r},${g2},${b},.3);color:${ts.color}">${ts.icon} ${ts.label} · ${p.year}</div>
+            <div class="thumb-title">${p.title.substring(0,70)}${p.title.length>70?'...':''}</div>
+            <div class="thumb-journal">${(p.journal||'').substring(0,35)}</div>
+            ${kw.length ? `<div style="display:flex;gap:3px;flex-wrap:wrap;margin-top:6px">${kw.map(k=>`<span style="font-size:8px;padding:1px 5px;border-radius:3px;background:rgba(${r},${g2},${b},.15);color:${ts.color};font-family:var(--mono);border:1px solid rgba(${r},${g2},${b},.2)">${k}</span>`).join('')}</div>` : ''}
+            <div class="thumb-footer" style="margin-top:auto">
+              <div class="thumb-lab">NSLab · 김동성 교수</div>
+              <div style="font-size:7px;color:rgba(255,255,255,.3);font-family:var(--mono)">ORCID 0000-0002-2977-5964</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="card-type ${ts.cls}">${ts.icon} ${ts.label}</div>
+        <div class="card-title">${p.title}</div>
+        <div class="card-journal">${(p.journal||'').substring(0,40)}</div>
+        <div class="card-authors">${(p.authors||'').substring(0,45)}${(p.authors||'').length>45?'...':''}</div>
+        <div class="card-footer">
+          <div class="card-date">${p.year}</div>
+          <div class="card-actions">
+            ${p.doi ? `<button class="act-btn" onclick="event.stopPropagation();window.open('https://doi.org/${p.doi}','_blank')">DOI</button>` : ''}
+            <button class="act-btn primary" onclick="event.stopPropagation();openModal('${p.id}')">상세</button>
+          </div>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ── MODAL ──
+function openModal(id) {
+  const p = allItems.find(x => x.id === id);
+  if (!p) return;
+  const ts = typeStyle(p.type);
+  const kw = kwExtract(p.title);
+  const r2 = parseInt(ts.color.slice(1,3),16), g2=parseInt(ts.color.slice(3,5),16), b2=parseInt(ts.color.slice(5,7),16);
+
+  document.getElementById('modal-title').textContent = ts.label + ' 상세';
+  document.getElementById('modal-body').innerHTML = `
+    <div class="modal-thumb">
+      <div style="width:100%;height:100%;background:linear-gradient(160deg,${ts.bg},#080c12);position:relative;overflow:hidden">
+        <div style="position:absolute;left:0;top:0;width:4px;height:100%;background:${ts.color}"></div>
+        <div style="position:absolute;inset:0;background-image:linear-gradient(rgba(${r2},${g2},${b2},.05) 1px,transparent 1px),linear-gradient(90deg,rgba(${r2},${g2},${b2},.05) 1px,transparent 1px);background-size:24px 24px"></div>
+        <div style="position:relative;z-index:1;padding:20px 22px;height:100%;display:flex;flex-direction:column">
+          <div style="font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:rgba(255,255,255,.4);font-family:var(--mono);margin-bottom:6px">KUMOH NAT'L INST. OF TECH. · NSLab</div>
+          <div style="display:inline-flex;align-items:center;gap:4px;font-size:10px;font-family:var(--mono);padding:4px 10px;border-radius:5px;background:rgba(${r2},${g2},${b2},.18);border:1px solid rgba(${r2},${g2},${b2},.3);color:${ts.color};margin-bottom:10px;width:fit-content">${ts.icon} ${ts.label} · ${p.year}</div>
+          <div style="font-size:14px;font-weight:700;color:#f1f5f9;line-height:1.5;margin-bottom:8px">${p.title}</div>
+          <div style="font-size:10px;color:rgba(255,255,255,.5);font-family:var(--mono);margin-bottom:10px">${p.journal||''}</div>
+          <div style="height:1px;background:rgba(255,255,255,.1);margin:8px 0"></div>
+          ${kw.length ? `<div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:10px">${kw.map(k=>`<span style="font-size:10px;padding:3px 8px;border-radius:4px;background:rgba(${r2},${g2},${b2},.15);color:${ts.color};font-family:var(--mono);border:1px solid rgba(${r2},${g2},${b2},.25)">${k}</span>`).join('')}</div>` : ''}
+          <div style="margin-top:auto">
+            <div style="font-size:10px;color:rgba(255,255,255,.5);font-family:var(--mono)">NSLab · 김동성 교수</div>
+            <div style="font-size:9px;color:rgba(255,255,255,.3);font-family:var(--mono)">ORCID 0000-0002-2977-5964</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:6px">${p.title}</div>
+    <div style="font-size:11px;color:var(--text2);margin-bottom:4px">📰 ${p.journal||'—'} (${p.year})</div>
+    <div style="font-size:11px;color:var(--text3);margin-bottom:12px">👤 ${p.authors||'—'}</div>
+    ${p.doi ? `<div style="font-size:11px;color:var(--text3);margin-bottom:12px;font-family:var(--mono)">DOI: ${p.doi}</div>` : ''}
+    <div style="font-size:11px;font-weight:600;color:var(--text);margin-bottom:8px">공유하기</div>
+    <div class="share-row">
+      <button class="share-btn" onclick="copyTitle('${p.id}')">📋 제목 복사</button>
+      ${p.doi ? `<button class="share-btn" onclick="window.open('https://doi.org/${p.doi}','_blank')">🔗 논문 보기</button>` : ''}
+      <button class="share-btn" onclick="copyCard('${p.id}')">📱 카드 복사</button>
+      <button class="share-btn" onclick="shareSNS('${p.id}')">🐦 SNS 공유</button>
+    </div>`;
+
+  document.getElementById('modal').classList.add('open');
+}
+
+function closeModal(e) {
+  if (!e || e.target === document.getElementById('modal')) {
+    document.getElementById('modal').classList.remove('open');
+  }
+}
+
+function copyTitle(id) {
+  const p = allItems.find(x=>x.id===id);
+  if (!p) return;
+  const text = `[NSLab 연구성과] ${p.title} — ${p.journal} (${p.year})\n저자: ${p.authors}${p.doi?'\nDOI: https://doi.org/'+p.doi:''}`;
+  navigator.clipboard.writeText(text).then(() => alert('복사됨!'));
+}
+
+function copyCard(id) { alert('인포그래픽 PNG는 NSLab Shorts Generator에서 생성 후 다운로드하세요.'); }
+
+function shareSNS(id) {
+  const p = allItems.find(x=>x.id===id);
+  if (!p) return;
+  const text = encodeURIComponent(`[NSLab 연구성과] "${p.title}" — ${p.journal} (${p.year}) #NSLab #금오공과대학교 #ICT연구`);
+  window.open(`https://twitter.com/intent/tweet?text=${text}`, '_blank');
+}
+
+// ── IFRAME DETECT ──
+if (window !== window.top) {
+  document.getElementById('embed-notice').style.display = 'block';
+}
+
+// ── INIT ──
+loadFeed();
+
+// 30분마다 자동 새로고침
+setInterval(loadFeed, 30 * 60 * 1000);
+</script>
+</body>
+</html>
