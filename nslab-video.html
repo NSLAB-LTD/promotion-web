@@ -1,0 +1,880 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NSLab Video Shorts</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+<style>
+:root{
+  --bg:#080c12;--panel:#0d1321;--panel2:#111827;--border:#1f2d42;--border2:#2a3d57;
+  --blue:#3b7ff5;--blue2:#6ba3ff;--green:#10b981;--yellow:#f59e0b;--red:#ef4444;--purple:#8b5cf6;
+  --text:#f1f5f9;--text2:#94a3b8;--text3:#4b6080;
+  --mono:'JetBrains Mono',monospace;--sans:'Noto Sans KR',sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:var(--sans);display:flex;height:100vh;overflow:hidden;font-size:13px;}
+.topbar{position:fixed;top:0;left:0;right:0;height:50px;background:var(--panel);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 20px;gap:12px;z-index:100;}
+.logo{display:flex;align-items:center;gap:8px;}
+.logo-mark{width:30px;height:30px;background:linear-gradient(135deg,var(--blue),var(--purple));border-radius:7px;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-weight:700;font-size:10px;color:#fff;}
+.logo-name{font-family:var(--mono);font-size:13px;font-weight:600;}
+.topbar-badge{font-size:10px;font-family:var(--mono);padding:2px 8px;border-radius:10px;background:rgba(239,68,68,.15);color:var(--red);border:1px solid rgba(239,68,68,.2);}
+.topbar-right{margin-left:auto;display:flex;gap:8px;}
+.btn{padding:6px 13px;border-radius:6px;font-size:11px;font-family:var(--mono);cursor:pointer;border:none;transition:all .15s;display:inline-flex;align-items:center;gap:5px;white-space:nowrap;}
+.btn-primary{background:var(--blue);color:#fff;}.btn-primary:hover{filter:brightness(1.1);}
+.btn-ghost{background:transparent;color:var(--text2);border:1px solid var(--border2);}.btn-ghost:hover{background:var(--panel2);color:var(--text);}
+.btn-green{background:var(--green);color:#fff;}
+.btn-red{background:var(--red);color:#fff;}
+.btn-sm{padding:3px 9px;font-size:10px;}
+.workspace{display:flex;height:100vh;padding-top:50px;}
+
+/* LEFT */
+.left{width:360px;min-width:360px;background:var(--panel);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden;}
+.left-tabs{display:flex;border-bottom:1px solid var(--border);flex-shrink:0;}
+.ltab{padding:10px 12px;font-size:11px;font-family:var(--mono);color:var(--text3);cursor:pointer;border-bottom:2px solid transparent;transition:.15s;}
+.ltab.active{color:var(--blue2);border-bottom-color:var(--blue);}
+.left-body{flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:10px;}
+.card{background:var(--panel2);border:1px solid var(--border);border-radius:9px;padding:12px;}
+.card-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:9px;}
+.card-title{font-size:10px;font-family:var(--mono);color:var(--text3);text-transform:uppercase;letter-spacing:.1em;}
+input[type=text],select,textarea{background:var(--bg);border:1px solid var(--border2);border-radius:5px;padding:6px 9px;color:var(--text);font-family:var(--mono);font-size:11px;outline:none;width:100%;}
+input:focus,select:focus,textarea:focus{border-color:var(--blue);}
+textarea{resize:vertical;min-height:70px;font-family:var(--sans);font-size:12px;line-height:1.5;}
+.form-row{display:flex;flex-direction:column;gap:3px;margin-bottom:8px;}
+.form-label{font-size:10px;color:var(--text3);font-family:var(--mono);}
+
+/* SLIDE PREVIEW LIST */
+.slide-list{display:flex;flex-direction:column;gap:6px;}
+.slide-item{background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:8px 10px;display:flex;align-items:center;gap:8px;cursor:pointer;transition:.12s;}
+.slide-item:hover{border-color:var(--blue2);}
+.slide-item.active{border-color:var(--blue);background:rgba(59,127,245,.08);}
+.slide-num{width:22px;height:22px;border-radius:4px;background:var(--border2);display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:10px;color:var(--text3);flex-shrink:0;}
+.slide-num.active{background:var(--blue);color:#fff;}
+.slide-info{flex:1;}
+.slide-type{font-size:10px;font-family:var(--mono);color:var(--accent2);}
+.slide-preview-text{font-size:11px;color:var(--text2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+
+/* MUSIC */
+.music-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;}
+.music-item{border:1px solid var(--border);border-radius:6px;padding:8px;cursor:pointer;transition:.12s;text-align:center;}
+.music-item:hover{border-color:var(--blue2);}
+.music-item.selected{border-color:var(--blue);background:rgba(59,127,245,.1);}
+.music-icon{font-size:18px;margin-bottom:3px;}
+.music-name{font-size:10px;color:var(--text);font-weight:500;}
+.music-desc{font-size:9px;color:var(--text3);}
+
+/* LOG */
+.log{font-family:var(--mono);font-size:10px;background:var(--bg);border:1px solid var(--border);border-radius:5px;padding:9px;max-height:80px;overflow-y:auto;}
+.log-line{line-height:1.7;color:var(--text3);}
+.log-line.ok{color:var(--green);}.log-line.info{color:var(--blue2);}.log-line.warn{color:var(--yellow);}.log-line.err{color:var(--red);}
+
+/* PROGRESS */
+.progress-wrap{margin-top:6px;}
+.progress-bar{height:6px;background:var(--border);border-radius:3px;overflow:hidden;}
+.progress-fill{height:100%;background:linear-gradient(90deg,var(--blue),var(--purple));border-radius:3px;transition:width .3s;width:0%;}
+.progress-text{font-size:10px;font-family:var(--mono);color:var(--text3);margin-top:4px;text-align:center;}
+
+/* RIGHT */
+.right{flex:1;display:flex;flex-direction:column;background:var(--bg);overflow:hidden;}
+.right-topbar{height:44px;background:var(--panel2);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 16px;gap:10px;flex-shrink:0;}
+.slide-dots{display:flex;gap:6px;}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--border2);cursor:pointer;transition:.15s;}
+.dot.active{background:var(--blue);}
+.dot.done{background:var(--green);}
+.right-body{flex:1;display:flex;align-items:center;justify-content:center;padding:20px;position:relative;overflow:hidden;}
+
+/* CANVAS PREVIEW */
+.canvas-wrap{position:relative;}
+#preview-canvas{border-radius:14px;box-shadow:0 0 40px rgba(59,127,245,.18),0 20px 60px rgba(0,0,0,.5);display:block;}
+.canvas-overlay{position:absolute;inset:0;border-radius:14px;pointer-events:none;}
+
+/* TIMELINE */
+.timeline{height:60px;background:var(--panel);border-top:1px solid var(--border);padding:8px 16px;display:flex;align-items:center;gap:10px;flex-shrink:0;}
+.timeline-track{flex:1;height:28px;background:var(--bg);border-radius:6px;overflow:hidden;position:relative;cursor:pointer;}
+.slide-segment{position:absolute;top:2px;bottom:2px;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:9px;font-family:var(--mono);color:#fff;opacity:.9;}
+.playhead{position:absolute;top:0;bottom:0;width:2px;background:var(--red);border-radius:1px;pointer-events:none;transition:left .05s linear;}
+.time-label{font-family:var(--mono);font-size:11px;color:var(--text3);min-width:36px;text-align:center;}
+
+::-webkit-scrollbar{width:4px;height:4px;}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px;}
+
+/* DROP ZONE */
+.drop-zone{border:2px dashed var(--border2);border-radius:8px;padding:14px;text-align:center;cursor:pointer;transition:.2s;position:relative;}
+.drop-zone:hover,.drop-zone.dragover{border-color:var(--blue);background:rgba(59,127,245,.05);}
+#file-input{position:absolute;inset:0;opacity:0;cursor:pointer;}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="logo">
+    <div class="logo-mark">NS</div>
+    <div class="logo-name">NSLab Video</div>
+  </div>
+  <span class="topbar-badge">🎬 15초 쇼츠</span>
+  <span style="font-size:11px;color:var(--text3);font-family:var(--mono)" id="topbar-title">논문을 입력하세요</span>
+  <div class="topbar-right">
+    <button class="btn btn-ghost btn-sm" onclick="location.href='index.html'">← 대시보드</button>
+    <button class="btn btn-ghost btn-sm" onclick="location.href='nslab-shorts.html'">🖼 이미지 쇼츠</button>
+    <button class="btn btn-primary" id="preview-btn" onclick="startPreview()">▶ 미리보기</button>
+    <button class="btn btn-green" id="record-btn" onclick="startRecord()">⬇ 영상 저장</button>
+  </div>
+</div>
+
+<div class="workspace">
+  <!-- LEFT PANEL -->
+  <div class="left">
+    <div class="left-tabs">
+      <div class="ltab active" onclick="switchLTab('content',this)">📝 내용</div>
+      <div class="ltab" onclick="switchLTab('upload',this)">📂 파일</div>
+      <div class="ltab" onclick="switchLTab('style',this)">🎨 스타일</div>
+      <div class="ltab" onclick="switchLTab('music',this)">🎵 음악</div>
+    </div>
+    <div class="left-body">
+
+      <!-- CONTENT TAB -->
+      <div id="lt-content">
+        <div class="card">
+          <div class="card-hdr"><span class="card-title">슬라이드 구성</span></div>
+          <div class="slide-list" id="slide-list"></div>
+        </div>
+        <div class="card">
+          <div class="card-hdr"><span class="card-title">슬라이드 1 — 제목</span></div>
+          <div class="form-row"><div class="form-label">논문 제목</div><input type="text" id="s1-title" placeholder="논문 제목" oninput="updateSlides()"></div>
+          <div class="form-row"><div class="form-label">저자</div><input type="text" id="s1-authors" placeholder="김동성, 이재민, ..." oninput="updateSlides()"></div>
+          <div class="form-row"><div class="form-label">게재지 · 연도</div><input type="text" id="s1-journal" placeholder="IEEE Trans. · 2025" oninput="updateSlides()"></div>
+        </div>
+        <div class="card">
+          <div class="card-hdr"><span class="card-title">슬라이드 2 — Abstract</span></div>
+          <div class="form-row"><div class="form-label">핵심 내용 (2~3줄)</div><textarea id="s2-abstract" placeholder="본 연구는 ..." oninput="updateSlides()"></textarea></div>
+        </div>
+        <div class="card">
+          <div class="card-hdr"><span class="card-title">슬라이드 3 — 기대효과</span></div>
+          <div class="form-row"><div class="form-label">기대효과 · 기여 (2~3줄)</div><textarea id="s3-impact" placeholder="이 연구는 ... 분야에 기여합니다" oninput="updateSlides()"></textarea></div>
+        </div>
+        <div class="card">
+          <div class="card-hdr"><span class="card-title">슬라이드 4 — 연락처</span></div>
+          <div class="form-row"><div class="form-label">연구실 / 교수님</div><input type="text" id="s4-lab" value="NSLab · 김동성 교수" oninput="updateSlides()"></div>
+          <div class="form-row"><div class="form-label">이메일</div><input type="text" id="s4-email" value="dskim@kumoh.ac.kr" oninput="updateSlides()"></div>
+          <div class="form-row"><div class="form-label">기관</div><input type="text" id="s4-org" value="국립금오공과대학교 전자공학부" oninput="updateSlides()"></div>
+        </div>
+      </div>
+
+      <!-- UPLOAD TAB -->
+      <div id="lt-upload" style="display:none">
+        <div class="card">
+          <div class="card-hdr"><span class="card-title">Word / PDF 드래그</span></div>
+          <div class="drop-zone" id="drop-zone">
+            <input type="file" id="file-input" accept=".docx,.doc,.txt" onchange="handleFile(this.files[0])">
+            <div style="font-size:24px;margin-bottom:6px">📂</div>
+            <div style="font-size:12px;font-weight:500;color:var(--text);margin-bottom:3px">파일을 여기에 드래그</div>
+            <div style="font-size:11px;color:var(--text3)">DOCX · TXT 지원 · HWP는 직접 입력</div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-hdr"><span class="card-title">Sheets에서 불러오기</span></div>
+          <div class="form-row"><div class="form-label">논문 검색</div><input type="text" id="sheets-search" placeholder="논문 제목 검색..." oninput="searchSheets()"></div>
+          <div id="sheets-results" style="max-height:180px;overflow-y:auto;display:flex;flex-direction:column;gap:4px;margin-top:6px"></div>
+          <button class="btn btn-ghost btn-sm" style="width:100%;justify-content:center;margin-top:6px" onclick="loadSheets()">↻ Sheets 새로고침</button>
+        </div>
+        <div class="log" id="upload-log"><div class="log-line">파일을 드래그하거나 Sheets에서 선택하세요</div></div>
+      </div>
+
+      <!-- STYLE TAB -->
+      <div id="lt-style" style="display:none">
+        <div class="card">
+          <div class="card-hdr"><span class="card-title">배경 테마</span></div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
+            <div class="music-item selected" onclick="setTheme('dark',this)" id="theme-dark"><div class="music-icon">🌌</div><div class="music-name">Tech Dark</div><div class="music-desc">블루 글로우</div></div>
+            <div class="music-item" onclick="setTheme('vivid',this)" id="theme-vivid"><div class="music-icon">🎨</div><div class="music-name">Vivid</div><div class="music-desc">퍼플 그라디언트</div></div>
+            <div class="music-item" onclick="setTheme('light',this)" id="theme-light"><div class="music-icon">☀️</div><div class="music-name">Clean Light</div><div class="music-desc">화이트 심플</div></div>
+            <div class="music-item" onclick="setTheme('black',this)" id="theme-black"><div class="music-icon">⬛</div><div class="music-name">Bold Black</div><div class="music-desc">블랙 시안</div></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-hdr"><span class="card-title">텍스트 애니메이션</span></div>
+          <select id="anim-type" onchange="updateSlides()">
+            <option value="fadeup">페이드업 (아래→위)</option>
+            <option value="fadein">페이드인</option>
+            <option value="slide">슬라이드 (좌→우)</option>
+            <option value="typewriter">타이프라이터</option>
+          </select>
+        </div>
+        <div class="card">
+          <div class="card-hdr"><span class="card-title">강조 색상</span></div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap">
+            <div style="width:24px;height:24px;border-radius:5px;background:#3b7ff5;cursor:pointer;border:2px solid #fff" onclick="setAccent('#3b7ff5',this)"></div>
+            <div style="width:24px;height:24px;border-radius:5px;background:#06b6d4;cursor:pointer;border:2px solid transparent" onclick="setAccent('#06b6d4',this)"></div>
+            <div style="width:24px;height:24px;border-radius:5px;background:#10b981;cursor:pointer;border:2px solid transparent" onclick="setAccent('#10b981',this)"></div>
+            <div style="width:24px;height:24px;border-radius:5px;background:#8b5cf6;cursor:pointer;border:2px solid transparent" onclick="setAccent('#8b5cf6',this)"></div>
+            <div style="width:24px;height:24px;border-radius:5px;background:#f59e0b;cursor:pointer;border:2px solid transparent" onclick="setAccent('#f59e0b',this)"></div>
+            <div style="width:24px;height:24px;border-radius:5px;background:#ec4899;cursor:pointer;border:2px solid transparent" onclick="setAccent('#ec4899',this)"></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-hdr"><span class="card-title">슬라이드당 시간</span></div>
+          <div style="display:flex;gap:6px">
+            <div class="music-item selected" id="dur-3" onclick="setDur(3,this)" style="flex:1"><div style="font-size:14px;font-weight:600;color:var(--text)">3초</div><div style="font-size:9px;color:var(--text3)">빠름</div></div>
+            <div class="music-item" id="dur-4" onclick="setDur(4,this)" style="flex:1"><div style="font-size:14px;font-weight:600;color:var(--text)">4초</div><div style="font-size:9px;color:var(--text3)">권장</div></div>
+            <div class="music-item" id="dur-5" onclick="setDur(5,this)" style="flex:1"><div style="font-size:14px;font-weight:600;color:var(--text)">5초</div><div style="font-size:9px;color:var(--text3)">여유</div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- MUSIC TAB -->
+      <div id="lt-music" style="display:none">
+        <div class="card">
+          <div class="card-hdr"><span class="card-title">장르별 배경음악</span></div>
+          <div class="music-grid">
+            <div class="music-item selected" onclick="setMusic('tech',this)"><div class="music-icon">🤖</div><div class="music-name">테크</div><div class="music-desc">미래적·전자음</div></div>
+            <div class="music-item" onclick="setMusic('calm',this)"><div class="music-icon">🌊</div><div class="music-name">잔잔함</div><div class="music-desc">피아노·ambient</div></div>
+            <div class="music-item" onclick="setMusic('upbeat',this)"><div class="music-icon">🚀</div><div class="music-name">활기</div><div class="music-desc">경쾌·모션</div></div>
+            <div class="music-item" onclick="setMusic('dramatic',this)"><div class="music-icon">🎯</div><div class="music-name">드라마틱</div><div class="music-desc">임팩트·강렬</div></div>
+            <div class="music-item" onclick="setMusic('none',this)" style="grid-column:1/-1"><div class="music-icon">🔇</div><div class="music-name">음악 없음</div><div class="music-desc">텍스트·애니메이션만</div></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-hdr"><span class="card-title">직접 MP3 업로드</span></div>
+          <input type="file" id="music-file" accept=".mp3,.wav,.ogg" onchange="loadCustomMusic(this)" style="font-size:11px;">
+          <div style="font-size:10px;color:var(--text3);margin-top:6px">업로드한 음악은 영상 길이에 맞게 자동 조절됩니다</div>
+        </div>
+        <div class="card">
+          <div class="card-hdr"><span class="card-title">음량</span></div>
+          <input type="range" id="vol-slider" min="0" max="100" value="30" oninput="setVol(this.value)" style="width:100%">
+          <div style="font-size:11px;color:var(--text3);font-family:var(--mono);text-align:center;margin-top:4px">음량: <span id="vol-label">30</span>%</div>
+        </div>
+        <div class="log" id="music-log"><div class="log-line">음악 장르를 선택하세요</div></div>
+      </div>
+
+      <!-- RECORD LOG -->
+      <div class="log" id="rec-log"><div class="log-line">▶ 미리보기 또는 ⬇ 영상 저장을 눌러 시작하세요</div></div>
+      <div class="progress-wrap" id="prog-wrap" style="display:none">
+        <div class="progress-bar"><div class="progress-fill" id="prog-fill"></div></div>
+        <div class="progress-text" id="prog-text">준비 중...</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- RIGHT: PREVIEW -->
+  <div class="right">
+    <div class="right-topbar">
+      <span style="font-size:11px;font-family:var(--mono);color:var(--text3)">슬라이드</span>
+      <div class="slide-dots" id="slide-dots"></div>
+      <span style="font-size:11px;font-family:var(--mono);color:var(--text3);margin-left:8px" id="slide-label">1 / 4</span>
+      <div style="flex:1"></div>
+      <span style="font-size:11px;font-family:var(--mono);color:var(--text3)">📱 9:16 · 15초</span>
+    </div>
+    <div class="right-body">
+      <div class="canvas-wrap">
+        <canvas id="preview-canvas" width="270" height="480"></canvas>
+      </div>
+    </div>
+    <div class="timeline" id="timeline">
+      <button class="btn btn-ghost btn-sm" id="play-btn" onclick="togglePlay()">▶</button>
+      <span class="time-label" id="time-cur">0.0s</span>
+      <div class="timeline-track" id="timeline-track" onclick="seekTimeline(event)">
+        <div id="playhead" class="playhead" style="left:0%"></div>
+      </div>
+      <span class="time-label" id="time-total">15s</span>
+    </div>
+  </div>
+</div>
+
+<script>
+const ST = {
+  theme:'dark', accent:'#3b7ff5', music:'tech', dur:3, vol:0.3,
+  slides:[], curSlide:0, playing:false, playTimer:null,
+  elapsed:0, totalDur:15,
+  audioCtx:null, audioBuffer:null, audioSource:null,
+  papers:[], sheetId:'1xnZyzu_v9DSE4WFT7RZaR_uaS8hfo3vAcrgzqBNOUM8',
+  customMusicBuffer:null
+};
+
+const MUSIC_URLS = {
+  tech:'https://cdn.pixabay.com/download/audio/2022/03/24/audio_1826c74e61.mp3',
+  calm:'https://cdn.pixabay.com/download/audio/2022/01/18/audio_d1718ab41b.mp3',
+  upbeat:'https://cdn.pixabay.com/download/audio/2022/10/25/audio_a4b1f6b5f8.mp3',
+  dramatic:'https://cdn.pixabay.com/download/audio/2021/11/25/audio_5bc64e0513.mp3'
+};
+
+function switchLTab(name,btn){
+  ['lt-content','lt-upload','lt-style','lt-music'].forEach(id=>{
+    document.getElementById(id).style.display='none';
+  });
+  document.getElementById('lt-'+name).style.display='block';
+  document.querySelectorAll('.ltab').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+function log(msg,type='',id='rec-log'){
+  const el=document.getElementById(id); if(!el) return;
+  const d=document.createElement('div'); d.className='log-line '+type;
+  d.textContent=new Date().toLocaleTimeString('ko')+' '+msg;
+  if(el.children.length===1&&el.children[0].textContent.includes('시작'))el.innerHTML='';
+  el.appendChild(d); el.scrollTop=el.scrollHeight;
+}
+
+// ── SLIDES ──
+function getSlideData(){
+  return [
+    {
+      type:'title', label:'제목',
+      title: document.getElementById('s1-title').value||'논문 제목',
+      authors: document.getElementById('s1-authors').value||'저자명',
+      journal: document.getElementById('s1-journal').value||'게재지 · 연도',
+      dur: ST.dur
+    },
+    {
+      type:'abstract', label:'Abstract',
+      heading:'핵심 내용',
+      body: document.getElementById('s2-abstract').value||'논문의 핵심 내용을 입력하세요.',
+      dur: ST.dur
+    },
+    {
+      type:'impact', label:'기대효과',
+      heading:'기대효과 및 기여',
+      body: document.getElementById('s3-impact').value||'기대효과를 입력하세요.',
+      dur: ST.dur
+    },
+    {
+      type:'contact', label:'연락처',
+      lab: document.getElementById('s4-lab').value||'NSLab · 김동성 교수',
+      email: document.getElementById('s4-email').value||'dskim@kumoh.ac.kr',
+      org: document.getElementById('s4-org').value||'국립금오공과대학교',
+      dur: ST.dur
+    }
+  ];
+}
+
+function updateSlides(){
+  ST.slides = getSlideData();
+  ST.totalDur = ST.slides.reduce((s,sl)=>s+sl.dur, 0);
+  document.getElementById('time-total').textContent = ST.totalDur+'s';
+  document.getElementById('topbar-title').textContent =
+    (document.getElementById('s1-title').value||'논문 제목').substring(0,40);
+  renderSlideList();
+  buildTimeline();
+  renderCurrentSlide();
+}
+
+function renderSlideList(){
+  const el=document.getElementById('slide-list');
+  el.innerHTML = ST.slides.map((s,i)=>`
+    <div class="slide-item${i===ST.curSlide?' active':''}" onclick="goSlide(${i})">
+      <div class="slide-num${i===ST.curSlide?' active':''}">${i+1}</div>
+      <div class="slide-info">
+        <div class="slide-type">${s.label} · ${s.dur}초</div>
+        <div class="slide-preview-text">${s.type==='title'?s.title:s.type==='contact'?s.lab:s.heading}</div>
+      </div>
+    </div>`).join('');
+  const dots=document.getElementById('slide-dots');
+  dots.innerHTML = ST.slides.map((s,i)=>`<div class="dot${i===ST.curSlide?' active':''}" onclick="goSlide(${i})"></div>`).join('');
+  document.getElementById('slide-label').textContent=(ST.curSlide+1)+' / '+ST.slides.length;
+}
+
+function goSlide(i){
+  ST.curSlide=i; renderSlideList(); renderCurrentSlide();
+}
+
+function buildTimeline(){
+  const track=document.getElementById('timeline-track');
+  const colors=['#3b7ff5','#8b5cf6','#10b981','#f59e0b'];
+  let offset=0;
+  const segs=ST.slides.map((s,i)=>{
+    const w=(s.dur/ST.totalDur*100).toFixed(1);
+    const seg=`<div class="slide-segment" style="left:${offset.toFixed(1)}%;width:${w}%;background:${colors[i%4]}">${s.label}</div>`;
+    offset+=parseFloat(w); return seg;
+  });
+  const ph=document.getElementById('playhead').outerHTML;
+  track.innerHTML = segs.join('')+ph;
+}
+
+// ── CANVAS RENDERING ──
+const canvas=document.getElementById('preview-canvas');
+const ctx=canvas.getContext('2d');
+
+const THEMES = {
+  dark:{bg1:'#060d1a',bg2:'#0a1628',text:'#f1f5f9',sub:'rgba(255,255,255,0.6)',grid:true},
+  vivid:{bg1:'#1a0533',bg2:'#0a1628',text:'#f1f5f9',sub:'rgba(255,255,255,0.6)',grid:false},
+  light:{bg1:'#f8fafc',bg2:'#e2e8f0',text:'#1e293b',sub:'rgba(0,0,0,0.55)',grid:false},
+  black:{bg1:'#050505',bg2:'#0a0a0a',text:'#f1f5f9',sub:'rgba(255,255,255,0.55)',grid:false}
+};
+
+function hex2rgb(h){return[parseInt(h.slice(1,3),16),parseInt(h.slice(3,5),16),parseInt(h.slice(5,7),16)];}
+
+function drawSlide(slide, progress=1.0){
+  const W=270,H=480;
+  const th=THEMES[ST.theme]||THEMES.dark;
+  const ac=ST.accent;
+  const [ar,ag,ab]=hex2rgb(ac);
+
+  ctx.clearRect(0,0,W,H);
+
+  // BG
+  const grad=ctx.createLinearGradient(0,0,W,H);
+  grad.addColorStop(0,th.bg1); grad.addColorStop(1,th.bg2);
+  ctx.fillStyle=grad; ctx.fillRect(0,0,W,H);
+
+  // Grid lines
+  if(th.grid){
+    ctx.strokeStyle=`rgba(${ar},${ag},${ab},0.05)`; ctx.lineWidth=0.5;
+    for(let x=0;x<W;x+=28){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,H);ctx.stroke();}
+    for(let y=0;y<H;y+=28){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke();}
+  }
+
+  // Glow circle
+  const grd=ctx.createRadialGradient(W,0,0,W,0,200);
+  grd.addColorStop(0,`rgba(${ar},${ag},${ab},0.12)`); grd.addColorStop(1,'transparent');
+  ctx.fillStyle=grd; ctx.fillRect(0,0,W,H);
+
+  // Left accent bar
+  const barGrad=ctx.createLinearGradient(0,0,0,H);
+  barGrad.addColorStop(0,ac); barGrad.addColorStop(0.5,'#8b5cf6'); barGrad.addColorStop(1,'#06b6d4');
+  ctx.fillStyle=barGrad; ctx.fillRect(0,0,3,H);
+
+  // Animate offset
+  const animType=document.getElementById('anim-type')?.value||'fadeup';
+  function animOffset(idx){
+    const delay=idx*0.15;
+    const p=Math.max(0,Math.min(1,(progress-delay)/(1-delay*ST.slides.length*0.05)));
+    if(animType==='fadeup') return {alpha:p, dy:(1-p)*18};
+    if(animType==='fadein') return {alpha:p, dy:0};
+    if(animType==='slide') return {alpha:p, dx:(1-p)*-20};
+    if(animType==='typewriter') return {alpha:1, chars:Math.floor(p*100)};
+    return {alpha:p,dy:0};
+  }
+
+  function drawText(text,x,y,font,color,alpha,dy=0,dx=0,maxWidth=240){
+    ctx.save();
+    ctx.globalAlpha=alpha;
+    ctx.translate(dx||0,dy||0);
+    ctx.fillStyle=color;
+    ctx.font=font;
+    ctx.textAlign='left';
+    // word wrap
+    const words=text.split(' '); let line=''; const lines=[];
+    for(const w of words){
+      const test=line+w+' ';
+      if(ctx.measureText(test).width>maxWidth&&line){lines.push(line.trim());line=w+' ';}
+      else line=test;
+    }
+    lines.push(line.trim());
+    lines.forEach((l,i)=>{ctx.fillText(l,x,y+i*18);});
+    ctx.restore();
+  }
+
+  // NSLab label
+  const a0=animOffset(0);
+  ctx.save();ctx.globalAlpha=a0.alpha*0.5;ctx.fillStyle=th.sub;
+  ctx.font="8px 'JetBrains Mono'";ctx.textAlign='left';
+  ctx.fillText("KUMOH NAT'L INST. OF TECH. · NSLab",12+(a0.dx||0),20+(a0.dy||0));
+  ctx.restore();
+
+  if(slide.type==='title'){
+    // Badge
+    const a1=animOffset(1);
+    ctx.save();ctx.globalAlpha=a1.alpha;
+    ctx.fillStyle=`rgba(${ar},${ag},${ab},0.18)`;
+    ctx.strokeStyle=`rgba(${ar},${ag},${ab},0.4)`;
+    ctx.lineWidth=0.5;
+    roundRect(ctx,12+(a1.dx||0),28+(a1.dy||0),120,20,4);
+    ctx.fill();ctx.stroke();
+    ctx.fillStyle=ac;ctx.font="9px 'JetBrains Mono'";
+    ctx.fillText('저널 논문 · NSLab',16+(a1.dx||0),41+(a1.dy||0));
+    ctx.restore();
+
+    // Title
+    const a2=animOffset(2);
+    ctx.save();ctx.globalAlpha=a2.alpha;ctx.translate(a2.dx||0,a2.dy||0);
+    ctx.fillStyle=th.text;ctx.font="bold 14px 'Noto Sans KR'";
+    wrapText(ctx,slide.title,12,72,246,20);
+    ctx.restore();
+
+    // Divider
+    const a3=animOffset(3);
+    ctx.save();ctx.globalAlpha=a3.alpha*0.2;
+    ctx.fillStyle=th.text;ctx.fillRect(12,130,246,1);ctx.restore();
+
+    // Authors
+    const a4=animOffset(4);
+    ctx.save();ctx.globalAlpha=a4.alpha*0.7;ctx.translate(a4.dx||0,a4.dy||0);
+    ctx.fillStyle=th.sub;ctx.font="11px 'Noto Sans KR'";
+    wrapText(ctx,slide.authors,12,148,246,16);
+    ctx.restore();
+
+    // Journal
+    const a5=animOffset(5);
+    ctx.save();ctx.globalAlpha=a5.alpha*0.6;ctx.translate(a5.dx||0,a5.dy||0);
+    ctx.fillStyle=th.sub;ctx.font="10px 'JetBrains Mono'";
+    ctx.fillText(slide.journal.substring(0,36),12,200);
+    ctx.restore();
+
+  } else if(slide.type==='abstract'||slide.type==='impact'){
+    const a1=animOffset(1);
+    // Section label
+    ctx.save();ctx.globalAlpha=a1.alpha*0.5;ctx.translate(a1.dx||0,a1.dy||0);
+    ctx.fillStyle=th.sub;ctx.font="8px 'JetBrains Mono'";
+    ctx.fillText(slide.heading.toUpperCase(),12,38);
+    ctx.restore();
+
+    // Highlight bar
+    const a2=animOffset(2);
+    ctx.save();ctx.globalAlpha=a2.alpha;ctx.translate(a2.dx||0,a2.dy||0);
+    ctx.fillStyle=`rgba(${ar},${ag},${ab},0.1)`;
+    ctx.strokeStyle=ac;ctx.lineWidth=2.5;
+    roundRect(ctx,12,48,246,160,6);ctx.fill();
+    ctx.beginPath();ctx.moveTo(12,48);ctx.lineTo(12,208);ctx.strokeStyle=ac;ctx.lineWidth=3;ctx.stroke();
+    ctx.restore();
+
+    const a3=animOffset(3);
+    ctx.save();ctx.globalAlpha=a3.alpha;ctx.translate(a3.dx||0,a3.dy||0);
+    ctx.fillStyle=th.text;ctx.font="12px 'Noto Sans KR'";
+    wrapText(ctx,slide.body,20,68,230,18);
+    ctx.restore();
+
+  } else if(slide.type==='contact'){
+    const a1=animOffset(1);
+    ctx.save();ctx.globalAlpha=a1.alpha;ctx.translate(a1.dx||0,a1.dy||0);
+
+    // Avatar circle
+    ctx.fillStyle=`rgba(${ar},${ag},${ab},0.2)`;
+    ctx.strokeStyle=ac;ctx.lineWidth=1.5;
+    ctx.beginPath();ctx.arc(135,100,36,0,Math.PI*2);ctx.fill();ctx.stroke();
+    ctx.fillStyle=ac;ctx.font="bold 18px 'Noto Sans KR'";
+    ctx.textAlign='center';ctx.fillText('DS',135,107);
+
+    ctx.textAlign='left';
+    ctx.fillStyle=th.text;ctx.font="bold 14px 'Noto Sans KR'";
+    ctx.textAlign='center';
+    wrapTextCenter(ctx,slide.lab,135,156,246,18);
+
+    ctx.fillStyle=th.sub;ctx.font="10px 'JetBrains Mono'";
+    ctx.fillText(slide.email,135,186);
+    ctx.font="10px 'Noto Sans KR'";
+    wrapTextCenter(ctx,slide.org,135,204,246,15);
+
+    // Divider
+    ctx.globalAlpha=a1.alpha*0.15;ctx.fillStyle=th.text;ctx.fillRect(40,230,190,1);ctx.globalAlpha=a1.alpha;
+
+    // ORCID
+    ctx.fillStyle=ac;ctx.font="9px 'JetBrains Mono'";
+    ctx.fillText('ORCID 0000-0002-2977-5964',135,248);
+
+    ctx.restore();
+  }
+
+  // Footer
+  const af=animOffset(8);
+  ctx.save();ctx.globalAlpha=af.alpha*0.4;
+  ctx.fillStyle=th.sub;ctx.font="8px 'JetBrains Mono'";
+  ctx.textAlign='left';ctx.fillText('NSLab · KIT · dskim@kumoh.ac.kr',12,H-12);
+  ctx.restore();
+}
+
+function roundRect(ctx,x,y,w,h,r){
+  ctx.beginPath();ctx.moveTo(x+r,y);ctx.lineTo(x+w-r,y);ctx.quadraticCurveTo(x+w,y,x+w,y+r);
+  ctx.lineTo(x+w,y+h-r);ctx.quadraticCurveTo(x+w,y+h,x+w-r,y+h);
+  ctx.lineTo(x+r,y+h);ctx.quadraticCurveTo(x,y+h,x,y+h-r);
+  ctx.lineTo(x,y+r);ctx.quadraticCurveTo(x,y,x+r,y);ctx.closePath();
+}
+
+function wrapText(ctx,text,x,y,maxWidth,lineHeight){
+  const words=text.split(' '); let line='';
+  for(const w of words){
+    const test=line+w+' ';
+    if(ctx.measureText(test).width>maxWidth&&line){ctx.fillText(line.trim(),x,y);y+=lineHeight;line=w+' ';}
+    else line=test;
+  }
+  ctx.fillText(line.trim(),x,y);
+}
+
+function wrapTextCenter(ctx,text,cx,y,maxWidth,lineHeight){
+  const words=text.split(' '); let line=''; ctx.textAlign='center';
+  for(const w of words){
+    const test=line+w+' ';
+    if(ctx.measureText(test).width>maxWidth&&line){ctx.fillText(line.trim(),cx,y);y+=lineHeight;line=w+' ';}
+    else line=test;
+  }
+  ctx.fillText(line.trim(),cx,y);
+}
+
+function renderCurrentSlide(progress=1.0){
+  if(!ST.slides.length)return;
+  drawSlide(ST.slides[ST.curSlide], progress);
+}
+
+// ── PLAYBACK ──
+let animFrame=null;
+let playStart=null;
+
+function startPreview(){
+  if(ST.playing){stopPlay();return;}
+  ST.slides=getSlideData();
+  if(!ST.slides.length)return;
+  ST.playing=true;
+  document.getElementById('preview-btn').textContent='⏹ 정지';
+  playMusic();
+  playStart=performance.now()-ST.elapsed*1000;
+  animFrame=requestAnimationFrame(playFrame);
+}
+
+function playFrame(now){
+  if(!ST.playing)return;
+  const elapsed=(now-playStart)/1000;
+  ST.elapsed=elapsed;
+
+  if(elapsed>=ST.totalDur){stopPlay();return;}
+
+  // Find current slide
+  let acc=0;
+  for(let i=0;i<ST.slides.length;i++){
+    const s=ST.slides[i];
+    if(elapsed<acc+s.dur){
+      const slideProgress=(elapsed-acc)/s.dur;
+      if(ST.curSlide!==i){ST.curSlide=i;renderSlideList();}
+      drawSlide(s, Math.min(slideProgress*3,1));
+      break;
+    }
+    acc+=s.dur;
+  }
+
+  // Update playhead
+  const pct=(elapsed/ST.totalDur*100).toFixed(1);
+  const ph=document.querySelector('.playhead');
+  if(ph)ph.style.left=pct+'%';
+  document.getElementById('time-cur').textContent=elapsed.toFixed(1)+'s';
+
+  animFrame=requestAnimationFrame(playFrame);
+}
+
+function stopPlay(){
+  ST.playing=false;
+  cancelAnimationFrame(animFrame);
+  stopMusic();
+  document.getElementById('preview-btn').textContent='▶ 미리보기';
+}
+
+function togglePlay(){
+  if(ST.playing)stopPlay();
+  else startPreview();
+}
+
+function seekTimeline(e){
+  const track=document.getElementById('timeline-track');
+  const rect=track.getBoundingClientRect();
+  const pct=(e.clientX-rect.left)/rect.width;
+  ST.elapsed=pct*ST.totalDur;
+  if(ST.playing){playStart=performance.now()-ST.elapsed*1000;}
+  else{
+    let acc=0;
+    for(let i=0;i<ST.slides.length;i++){
+      if(ST.elapsed<acc+ST.slides[i].dur){ST.curSlide=i;break;}
+      acc+=ST.slides[i].dur;
+    }
+    renderCurrentSlide();renderSlideList();
+  }
+}
+
+// ── AUDIO ──
+async function playMusic(){
+  if(ST.music==='none')return;
+  try{
+    if(!ST.audioCtx)ST.audioCtx=new(window.AudioContext||window.webkitAudioContext)();
+    if(ST.audioCtx.state==='suspended')await ST.audioCtx.resume();
+
+    let buf=ST.customMusicBuffer;
+    if(!buf){
+      const url=MUSIC_URLS[ST.music];
+      if(!url)return;
+      const resp=await fetch(url);
+      const ab=await resp.arrayBuffer();
+      buf=await ST.audioCtx.decodeAudioData(ab);
+    }
+
+    ST.audioSource=ST.audioCtx.createBufferSource();
+    ST.audioSource.buffer=buf;
+    ST.audioSource.loop=true;
+    const gain=ST.audioCtx.createGain();
+    gain.gain.value=ST.vol;
+    ST.audioSource.connect(gain);
+    gain.connect(ST.audioCtx.destination);
+    ST.audioSource.start(0);
+    log('🎵 음악 재생 중...','ok','music-log');
+  }catch(e){log('⚠ 음악 로드 실패: '+e.message,'warn','music-log');}
+}
+
+function stopMusic(){
+  try{ST.audioSource?.stop();}catch(e){}
+  ST.audioSource=null;
+}
+
+function setVol(v){ST.vol=v/100;document.getElementById('vol-label').textContent=v;}
+
+async function loadCustomMusic(input){
+  const file=input.files[0]; if(!file)return;
+  if(!ST.audioCtx)ST.audioCtx=new(window.AudioContext||window.webkitAudioContext)();
+  const ab=await file.arrayBuffer();
+  ST.customMusicBuffer=await ST.audioCtx.decodeAudioData(ab);
+  log(`✓ 음악 파일 로드: ${file.name}`,'ok','music-log');
+}
+
+// ── RECORDING ──
+async function startRecord(){
+  stopPlay();
+  ST.slides=getSlideData();
+  ST.elapsed=0;ST.curSlide=0;
+  log('⟳ 영상 녹화 시작...','info');
+  document.getElementById('prog-wrap').style.display='block';
+  document.getElementById('record-btn').disabled=true;
+
+  const stream=canvas.captureStream(30);
+  const recorder=new MediaRecorder(stream,{mimeType:'video/webm;codecs=vp9',videoBitsPerSecond:2500000});
+  const chunks=[];
+
+  recorder.ondataavailable=e=>{if(e.data.size>0)chunks.push(e.data);};
+  recorder.onstop=()=>{
+    const blob=new Blob(chunks,{type:'video/webm'});
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a');
+    const title=(document.getElementById('s1-title').value||'NSLab').substring(0,20).replace(/[^a-zA-Z0-9가-힣]/g,'_');
+    a.download=`NSLab_${title}_${ST.totalDur}s.webm`;
+    a.href=url;a.click();
+    URL.revokeObjectURL(url);
+    log('✅ 영상 저장 완료! (WebM)','ok');
+    document.getElementById('prog-fill').style.width='100%';
+    document.getElementById('prog-text').textContent='저장 완료!';
+    document.getElementById('record-btn').disabled=false;
+  };
+
+  recorder.start();
+
+  // Render all frames
+  const FPS=30;
+  const totalFrames=Math.ceil(ST.totalDur*FPS);
+  let frame=0;
+
+  function renderFrame(){
+    if(frame>=totalFrames){
+      recorder.stop();
+      return;
+    }
+    const t=frame/FPS;
+    let acc=0;
+    for(let i=0;i<ST.slides.length;i++){
+      if(t<acc+ST.slides[i].dur){
+        const p=(t-acc)/ST.slides[i].dur;
+        drawSlide(ST.slides[i],Math.min(p*3,1));
+        break;
+      }
+      acc+=ST.slides[i].dur;
+    }
+    const pct=Math.round(frame/totalFrames*100);
+    document.getElementById('prog-fill').style.width=pct+'%';
+    document.getElementById('prog-text').textContent=`렌더링 중... ${pct}% (${t.toFixed(1)}s / ${ST.totalDur}s)`;
+    frame++;
+    setTimeout(renderFrame,1000/FPS);
+  }
+  renderFrame();
+  log(`총 ${ST.totalDur}초 / ${totalFrames}프레임 렌더링 중...`,'info');
+}
+
+// ── FILE DRAG ──
+const dz=document.getElementById('drop-zone');
+if(dz){
+  dz.addEventListener('dragover',e=>{e.preventDefault();dz.classList.add('dragover');});
+  dz.addEventListener('dragleave',()=>dz.classList.remove('dragover'));
+  dz.addEventListener('drop',e=>{e.preventDefault();dz.classList.remove('dragover');handleFile(e.dataTransfer.files[0]);});
+}
+
+async function handleFile(file){
+  if(!file)return;
+  log(`파일 처리: ${file.name}`,'info','upload-log');
+  const ext=file.name.split('.').pop().toLowerCase();
+  let text='';
+  if(ext==='docx'||ext==='doc'){
+    try{const ab=await file.arrayBuffer();const r=await mammoth.extractRawText({arrayBuffer:ab});text=r.value;log('✓ Word 추출 완료','ok','upload-log');}
+    catch(e){log('✗ 추출 실패: '+e.message,'err','upload-log');return;}
+  } else if(ext==='txt'){text=await file.text();log('✓ TXT 읽기 완료','ok','upload-log');}
+  else{log('⚠ HWP 직접 지원 불가 → 내용 탭에 직접 입력하세요','warn','upload-log');return;}
+
+  // Parse
+  const titleM=text.match(/(?:Title|제목|논문명)[:\s]+([^\n]{10,})/i);
+  const authM=text.match(/(?:Author|저자)[s]?[:\s]+([^\n]+)/i);
+  const jrnlM=text.match(/(?:Journal|학술지|게재지|Conference)[:\s]+([^\n]+)/i);
+  const yearM=text.match(/\b(20\d{2})\b/);
+  const absM=text.match(/(?:Abstract|초록|요약)[:\s]*\n?(.{30,500}?)(?:\n\n|\n[A-Z]|$)/is);
+  const impM=text.match(/(?:결론|기대효과|Conclusion|Impact|기여)[:\s]*\n?(.{20,300}?)(?:\n\n|\n[A-Z]|$)/is);
+
+  if(titleM)document.getElementById('s1-title').value=titleM[1].trim().substring(0,100);
+  if(authM)document.getElementById('s1-authors').value=authM[1].trim().substring(0,80);
+  if(jrnlM)document.getElementById('s1-journal').value=jrnlM[1].trim().substring(0,60)+(yearM?' · '+yearM[1]:'');
+  if(absM)document.getElementById('s2-abstract').value=absM[1].trim().substring(0,200);
+  if(impM)document.getElementById('s3-impact').value=impM[1].trim().substring(0,200);
+
+  updateSlides();
+  switchLTab('content',document.querySelectorAll('.ltab')[0]);
+  log('✓ 내용 자동 입력 완료!','ok','upload-log');
+}
+
+// ── SHEETS ──
+function sheetFetch(sheet){
+  return new Promise(res=>{
+    const cb='sv_'+Math.random().toString(36).slice(2);
+    window[cb]=d=>{delete window[cb];document.getElementById('sc_'+cb)?.remove();res(d);};
+    const sc=document.createElement('script');sc.id='sc_'+cb;
+    sc.src=`https://docs.google.com/spreadsheets/d/${ST.sheetId}/gviz/tq?tqx=responseHandler:${cb}&sheet=${encodeURIComponent(sheet)}`;
+    sc.onerror=()=>{delete window[cb];sc.remove();res(null);};
+    document.head.appendChild(sc);
+  });
+}
+function gv(row,i){const c=row.c&&row.c[i];return c&&c.v!=null?String(c.v).trim():'';}
+
+async function loadSheets(){
+  log('Sheets 로딩...','info','upload-log');
+  const jd=await sheetFetch('논문(저널)');
+  if(jd?.table){
+    ST.papers=[];
+    jd.table.rows.forEach((r,i)=>{
+      const t=gv(r,15),y=gv(r,2);
+      if(!t||!y||isNaN(+y))return;
+      ST.papers.push({title:t,authors:[gv(r,16),gv(r,17)].filter(Boolean).join(', '),journal:gv(r,19),year:+y});
+    });
+    log(`✓ ${ST.papers.length}편 로드`,'ok','upload-log');
+    searchSheets();
+  }
+}
+
+function searchSheets(){
+  const q=(document.getElementById('sheets-search')?.value||'').toLowerCase();
+  const res=document.getElementById('sheets-results');
+  const filtered=q?ST.papers.filter(p=>p.title.toLowerCase().includes(q)):ST.papers.slice(0,10);
+  res.innerHTML=filtered.map(p=>`
+    <div style="padding:6px 8px;background:var(--bg);border:1px solid var(--border);border-radius:5px;cursor:pointer;font-size:11px;color:var(--text2)"
+      onclick="fillFromSheets(${JSON.stringify(p).replace(/"/g,'&quot;')})">
+      <div style="color:var(--text);margin-bottom:2px">${p.title.substring(0,55)}...</div>
+      <div style="font-size:10px;font-family:var(--mono);color:var(--text3)">${p.year} · ${(p.journal||'').substring(0,25)}</div>
+    </div>`).join('');
+}
+
+function fillFromSheets(p){
+  document.getElementById('s1-title').value=p.title;
+  document.getElementById('s1-authors').value=p.authors||'';
+  document.getElementById('s1-journal').value=(p.journal||'')+(p.year?' · '+p.year:'');
+  updateSlides();
+  switchLTab('content',document.querySelectorAll('.ltab')[0]);
+  log('✓ Sheets 데이터 입력 완료','ok','upload-log');
+}
+
+// ── SETTINGS ──
+function setTheme(t,el){ST.theme=t;document.querySelectorAll('#lt-style .music-item').forEach(e=>e.classList.remove('selected'));el.classList.add('selected');renderCurrentSlide();}
+function setAccent(c,el){ST.accent=c;document.querySelectorAll('#lt-style div[onclick^="setAccent"]').forEach(e=>e.style.borderColor='transparent');el.style.borderColor='#fff';renderCurrentSlide();}
+function setMusic(m,el){ST.music=m;document.querySelectorAll('#lt-music .music-item').forEach(e=>e.classList.remove('selected'));el.classList.add('selected');}
+function setDur(d,el){ST.dur=d;document.querySelectorAll('[id^="dur-"]').forEach(e=>e.classList.remove('selected'));el.classList.add('selected');updateSlides();}
+
+// INIT
+updateSlides();
+loadSheets();
+</script>
+</body>
+</html>
