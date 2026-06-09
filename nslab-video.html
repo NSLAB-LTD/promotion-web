@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>NSLab Video Shorts</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/mammoth@1.6.0/mammoth.browser.min.js"></script>
 <style>
 :root{
   --bg:#080c12;--panel:#0d1321;--panel2:#111827;--border:#1f2d42;--border2:#2a3d57;
@@ -288,7 +288,7 @@ const ST = {
   elapsed:0, totalDur:15,
   audioCtx:null, audioBuffer:null, audioSource:null,
   papers:[], sheetId:'1xnZyzu_v9DSE4WFT7RZaR_uaS8hfo3vAcrgzqBNOUM8',
-  customMusicBuffer:null
+  customMusicBuffer:null, _musicNodes:[], _masterGain:null, _musicRepeat:null
 };
 
 const MUSIC_URLS = {
@@ -678,35 +678,75 @@ function seekTimeline(e){
 
 // ── AUDIO ──
 async function playMusic(){
-  if(ST.music==='none')return;
+  if(ST.music==='none') return;
   try{
-    if(!ST.audioCtx)ST.audioCtx=new(window.AudioContext||window.webkitAudioContext)();
-    if(ST.audioCtx.state==='suspended')await ST.audioCtx.resume();
-
-    let buf=ST.customMusicBuffer;
-    if(!buf){
-      const url=MUSIC_URLS[ST.music];
-      if(!url)return;
-      const resp=await fetch(url);
-      const ab=await resp.arrayBuffer();
-      buf=await ST.audioCtx.decodeAudioData(ab);
+    if(!ST.audioCtx) ST.audioCtx=new(window.AudioContext||window.webkitAudioContext)();
+    if(ST.audioCtx.state==='suspended') await ST.audioCtx.resume();
+    if(ST.customMusicBuffer){
+      ST.audioSource=ST.audioCtx.createBufferSource();
+      ST.audioSource.buffer=ST.customMusicBuffer;
+      ST.audioSource.loop=true;
+      const gain=ST.audioCtx.createGain();
+      gain.gain.value=ST.vol;
+      ST.audioSource.connect(gain);
+      gain.connect(ST.audioCtx.destination);
+      ST.audioSource.start(0);
+      log('🎵 커스텀 음악 재생 중...','ok','music-log');
+      return;
     }
+    synthMusic(ST.music, ST.vol, ST.totalDur);
+    log('🎵 음악 재생 중 ('+ST.music+')','ok','music-log');
+  }catch(e){log('⚠ 음악 오류: '+e.message,'warn','music-log');}
+}
 
-    ST.audioSource=ST.audioCtx.createBufferSource();
-    ST.audioSource.buffer=buf;
-    ST.audioSource.loop=true;
-    const gain=ST.audioCtx.createGain();
-    gain.gain.value=ST.vol;
-    ST.audioSource.connect(gain);
-    gain.connect(ST.audioCtx.destination);
-    ST.audioSource.start(0);
-    log('🎵 음악 재생 중...','ok','music-log');
-  }catch(e){log('⚠ 음악 로드 실패: '+e.message,'warn','music-log');}
+function synthMusic(genre, vol, duration){
+  if(!ST.audioCtx) return;
+  const ctx=ST.audioCtx;
+  if(ST._musicNodes){ST._musicNodes.forEach(n=>{try{n.stop();}catch(e){}});ST._musicNodes=[];}
+  ST._musicNodes=[];
+  const masterGain=ctx.createGain();
+  masterGain.gain.setValueAtTime(0,ctx.currentTime);
+  masterGain.gain.linearRampToValueAtTime(vol*0.35,ctx.currentTime+0.5);
+  masterGain.gain.linearRampToValueAtTime(vol*0.35,ctx.currentTime+duration-1);
+  masterGain.gain.linearRampToValueAtTime(0,ctx.currentTime+duration+0.5);
+  masterGain.connect(ctx.destination);
+  ST._masterGain=masterGain;
+  const patterns={
+    tech:[220,262,330,440,330,262,220,165],
+    calm:[261,293,329,349,329,293,261,220],
+    upbeat:[330,392,440,523,440,392,330,294],
+    dramatic:[196,220,262,330,392,330,262,220]
+  };
+  const bpm=genre==='upbeat'?120:genre==='dramatic'?90:100;
+  const noteLen=60/bpm;
+  const freqs=patterns[genre]||patterns.tech;
+  const waveType=genre==='tech'?'sawtooth':genre==='dramatic'?'square':'triangle';
+  const totalNotes=Math.ceil(duration/noteLen)+8;
+  for(let ni=0;ni<totalNotes;ni++){
+    const freq=freqs[ni%freqs.length];
+    const t=ctx.currentTime+(ni*noteLen);
+    if(t>ctx.currentTime+duration+1) break;
+    const osc=ctx.createOscillator();
+    const env=ctx.createGain();
+    osc.type=waveType;
+    osc.frequency.value=freq;
+    env.gain.setValueAtTime(0,t);
+    env.gain.linearRampToValueAtTime(0.4,t+0.04);
+    env.gain.linearRampToValueAtTime(0.1,t+noteLen*0.7);
+    env.gain.linearRampToValueAtTime(0,t+noteLen);
+    osc.connect(env);env.connect(masterGain);
+    osc.start(t);osc.stop(t+noteLen+0.1);
+    ST._musicNodes.push(osc);
+  }
 }
 
 function stopMusic(){
   try{ST.audioSource?.stop();}catch(e){}
   ST.audioSource=null;
+  if(ST._musicNodes){ST._musicNodes.forEach(n=>{try{n.stop();}catch(e){}});ST._musicNodes=[];}
+  try{ST._masterGain?.disconnect();}catch(e){}
+  ST._masterGain=null;
+  if(ST._musicRepeat){clearInterval(ST._musicRepeat);ST._musicRepeat=null;}
 }
 
 function setVol(v){ST.vol=v/100;document.getElementById('vol-label').textContent=v;}
